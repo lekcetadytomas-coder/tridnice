@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="cs" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>iZUŠ Třídnice & AI Zapisovač</title>
+    <script>
+        const origWarn = console.warn;
+        console.warn = function(...args) {
+            if (args[0] && typeof args[0] === 'string' && args[0].includes('cdn.tailwindcss.com')) return;
+            origWarn.apply(console, args);
+        };
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] } } }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100 min-h-screen transition-colors duration-200 pb-24">
+
+    <!-- Horní lišta -->
+    <header class="sticky top-0 z-30 bg-indigo-700 dark:bg-slate-900 text-white border-b border-indigo-800 dark:border-slate-800 shadow-md">
+        <div class="max-w-3xl mx-auto px-4 py-3.5 flex items-center justify-between">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="appCloseStudent()">
+                <div class="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center shadow-inner">
+                    <span class="text-xl">🎵</span>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight tracking-tight">iZUŠ Třídnice</h1>
+                    <p id="activeModelSub" class="text-xs text-indigo-200 dark:text-slate-400">Model: gemini-3.5-flash-lite</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button id="openSettingsBtn" type="button" onclick="appOpenSettings()" class="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-500 text-xs font-bold text-slate-950 flex items-center gap-1.5 transition cursor-pointer shadow-sm">
+                    <span>🔑</span>
+                    <span id="settingsStatusText">Nastavit AI klíč</span>
+                </button>
+                <button type="button" onclick="appToggleTheme()" class="p-2 rounded-xl bg-indigo-800/80 dark:bg-slate-800 text-indigo-100 hover:bg-indigo-800 transition cursor-pointer">
+                    🌓
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div id="toastContainer" class="fixed bottom-5 right-5 left-5 sm:left-auto z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <main class="max-w-3xl mx-auto px-4 pt-5">
+
+        <!-- POHLED 1: SLOŽKY ŽÁKŮ -->
+        <div id="homeView" class="space-y-5">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="inline-flex p-1 rounded-xl bg-slate-200/80 dark:bg-slate-900 border border-slate-300/60 dark:border-slate-800">
+                    <button id="tabFoldersBtn" type="button" onclick="appSwitchTab('folders')" class="px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold bg-white dark:bg-slate-800 text-indigo-700 dark:text-indigo-400 shadow-sm transition cursor-pointer">
+                        📁 Složky žáků
+                    </button>
+                    <button id="tabAllPendingBtn" type="button" onclick="appSwitchTab('pending')" class="px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 transition flex items-center gap-1.5 cursor-pointer">
+                        <span>Ke zkopírování</span>
+                        <span id="globalPendingBadge" class="px-1.5 py-0.5 text-[11px] rounded-full bg-amber-500 text-white font-bold">0</span>
+                    </button>
+                </div>
+
+                <button type="button" onclick="appOpenAddStudent()" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-md flex items-center gap-2 transition cursor-pointer">
+                    <span>+ Přidat žáka</span>
+                </button>
+            </div>
+
+            <div id="foldersSection" class="space-y-3">
+                <div id="studentsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+            </div>
+
+            <div id="allPendingSection" class="hidden space-y-3">
+                <div id="allPendingList" class="space-y-3"></div>
+            </div>
+        </div>
+
+        <!-- POHLED 2: DETAIL ŽÁKA -->
+        <div id="studentDetailView" class="hidden space-y-5">
+            <div class="flex items-center justify-between bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+                <div class="flex items-center gap-3">
+                    <button type="button" onclick="appCloseStudent()" class="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 transition text-sm font-semibold cursor-pointer">
+                        ← Složky
+                    </button>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span id="detailStudentIcon" class="text-xl">🎹</span>
+                            <h2 id="detailStudentName" class="font-bold text-lg sm:text-xl">Žák</h2>
+                        </div>
+                        <p id="detailStudentSub" class="text-xs text-slate-500 dark:text-slate-400">Složka žáka</p>
+                    </div>
+                </div>
+                <button type="button" onclick="appDeleteCurrentStudent()" title="Smazat složku žáka" class="p-2 text-slate-400 hover:text-rose-600 rounded-xl transition cursor-pointer">🗑️</button>
+            </div>
+
+            <section class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-4 sm:p-5 space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <h3 class="font-bold text-sm sm:text-base flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-indigo-600"></span>
+                        Nový zápis z výuky
+                    </h3>
+                    <div class="flex items-center gap-2">
+                        <label for="lessonDate" class="text-xs font-medium text-slate-500">Datum:</label>
+                        <input type="date" id="lessonDate" class="px-2.5 py-1 text-xs sm:text-sm rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <button type="button" onclick="appStartDictation()" class="flex flex-col items-center justify-center gap-1.5 p-3.5 rounded-2xl border-2 border-indigo-100 dark:border-indigo-900/50 bg-indigo-50/70 dark:bg-indigo-950/30 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 transition cursor-pointer">
+                        <div id="micIconCircle" class="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow-sm">🎤</div>
+                        <span id="micBtnLabel" class="text-xs sm:text-sm font-semibold">Nadiktovat hlasem</span>
+                        <span class="text-[11px] text-slate-500 text-center">Mikrofon / Win+H</span>
+                    </button>
+
+                    <label for="photoInput" class="cursor-pointer flex flex-col items-center justify-center gap-1.5 p-3.5 rounded-2xl border-2 border-emerald-100 dark:border-emerald-900/50 bg-emerald-50/70 dark:bg-emerald-950/30 hover:bg-emerald-100 text-emerald-800 dark:text-emerald-300 transition">
+                        <div class="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-sm">📷</div>
+                        <span class="text-xs sm:text-sm font-semibold text-center">Vyfotit / nahrát deník</span>
+                        <span class="text-[11px] text-slate-500 text-center">JPG, PNG i HEIC</span>
+                        <input id="photoInput" type="file" accept="image/*,.heic,.heif" class="hidden" onchange="appHandlePhoto(this)">
+                    </label>
+                </div>
+
+                <!-- ŽIVÝ STAVOVÝ BOX PŘI ČTENÍ FOTKY -->
+                <div id="photoPreviewBox" class="hidden p-3.5 rounded-2xl bg-emerald-50 dark:bg-slate-800 border border-emerald-300 dark:border-slate-700 flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <img id="photoThumb" src="" class="w-12 h-12 rounded-xl object-cover border border-slate-300 hidden">
+                        <div id="photoSpinnerBox" class="w-12 h-12 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-lg shrink-0">⏳</div>
+                        <div>
+                            <span id="photoStatusTitle" class="text-xs sm:text-sm font-bold text-emerald-900 dark:text-emerald-300 block">Zpracovávám...</span>
+                            <p id="photoStatusSub" class="text-xs text-slate-600 dark:text-slate-400">Prosím vyčkejte...</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="appClearPhoto()" class="p-2 text-xs font-semibold text-rose-600 hover:bg-rose-100 rounded-xl cursor-pointer">✕</button>
+                </div>
+
+                <!-- TEXTOVÉ POLE + TLAČÍTKO PŘEFORMULOVAT + TLAČÍTKO ZPĚT -->
+                <div class="space-y-1.5">
+                    <div class="flex flex-wrap items-center justify-between gap-2 px-1">
+                        <label for="dictationInput" class="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                            Text látky (můžete uložit rovnou, nebo nechat pedagogicky učesat):
+                        </label>
+                        <div class="flex flex-wrap items-center gap-3">
+                            <!-- Tlačítko ZPĚT (zobrazí se po přeformulování) -->
+                            <button id="undoPolishBtn" type="button" onclick="appUndoPolish()" class="hidden text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 hover:bg-amber-200 transition cursor-pointer">
+                                ↩️ Vrátit původní text
+                            </button>
+                            <button id="polishInPlaceBtn" type="button" onclick="appPolishInPlace()" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer">
+                                ✨ Pedagogicky upravit v okně
+                            </button>
+                            <button type="button" onclick="appClearText()" class="text-xs text-slate-400 hover:text-rose-500 cursor-pointer">
+                                Vymazat
+                            </button>
+                        </div>
+                    </div>
+                    <textarea 
+                        id="dictationInput" 
+                        rows="6" 
+                        oninput="appAutoResize(this)"
+                        placeholder="Sem se automaticky vypíše text přečtený z fotky deníku nebo váš diktát (např. stupnice C dur, Bach Andante, práce s dynamikou)..."
+                        class="w-full min-h-[180px] p-4 text-base leading-relaxed rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition resize-y"
+                    ></textarea>
+                </div>
+
+                <!-- DVĚ TLAČÍTKA PRO ULOŽENÍ: ROVNOU ULOŽIT vs. PEDAGOGICKY UPRAVIT A ULOŽIT -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    <button 
+                        type="button" 
+                        onclick="appSaveEntryDirect()" 
+                        class="w-full py-3.5 px-4 rounded-xl text-sm font-semibold text-slate-800 dark:text-slate-100 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 transition flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                        <span>💾 Rovnou uložit do složky</span>
+                    </button>
+
+                    <button 
+                        id="savePolishedBtn"
+                        type="button" 
+                        onclick="appSaveEntryPolished()" 
+                        class="w-full py-3.5 px-4 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 shadow-md transition flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                        <span id="savePolishedBtnText">✨ Pedagogicky upravit a uložit</span>
+                    </button>
+                </div>
+            </section>
+
+            <section class="space-y-3">
+                <div class="flex items-center justify-between px-1">
+                    <h3 class="font-bold text-base flex items-center gap-2">
+                        <span>Nezkopírované zápisy do iZUŠ</span>
+                        <span id="studentPendingCount" class="px-2 py-0.5 text-xs rounded-full bg-amber-500 text-white font-bold">0</span>
+                    </h3>
+                </div>
+                <div id="studentPendingList" class="space-y-3"></div>
+            </section>
+
+            <section class="pt-2">
+                <details class="group bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+                    <summary class="cursor-pointer p-4 font-semibold text-sm text-slate-600 dark:text-slate-400 flex items-center justify-between select-none">
+                        <span>Historie již zapsaných hodin v iZUŠ (<span id="studentCopiedCount">0</span>)</span>
+                        <span class="text-xs group-open:rotate-180 transition-transform">▼</span>
+                    </summary>
+                    <div id="studentCopiedList" class="p-4 pt-0 space-y-3 border-t border-slate-100 dark:border-slate-800/60"></div>
+                </details>
+            </section>
+        </div>
+    </main>
+
+    <!-- MODÁL: + PŘIDAT ŽÁKA -->
+    <div id="addStudentModal" class="fixed inset-0 z-50 hidden bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 class="font-bold text-lg">Nová složka žáka</h3>
+                <button type="button" onclick="appCloseAddStudent()" class="p-2 rounded-xl text-slate-400 hover:text-slate-600 cursor-pointer">✕</button>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Jméno / označení žáka</label>
+                    <input id="newStudentNameInput" type="text" onkeydown="if(event.key==='Enter') appConfirmAddStudent()" placeholder="např. Josef, Pavlína, Mia..." class="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Nástroj / Obor</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button type="button" id="instBtn1" onclick="appSelectInstrument('klavír','🎹','instBtn1')" class="inst-btn p-2.5 rounded-xl border-2 border-indigo-500 bg-indigo-50 dark:bg-indigo-950/60 text-xs font-semibold flex flex-col items-center gap-1 cursor-pointer">
+                            <span class="text-lg">🎹</span><span>Klavír</span>
+                        </button>
+                        <button type="button" id="instBtn2" onclick="appSelectInstrument('kytara','🎸','instBtn2')" class="inst-btn p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold flex flex-col items-center gap-1 cursor-pointer">
+                            <span class="text-lg">🎸</span><span>Kytara</span>
+                        </button>
+                        <button type="button" id="instBtn3" onclick="appSelectInstrument('el. kytara','⚡','instBtn3')" class="inst-btn p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold flex flex-col items-center gap-1 cursor-pointer">
+                            <span class="text-lg">⚡</span><span>El. kytara</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button type="button" onclick="appCloseAddStudent()" class="px-4 py-2.5 rounded-xl text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 cursor-pointer">Zrušit</button>
+                <button type="button" onclick="appConfirmAddStudent()" class="px-5 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer shadow-md">Vytvořit složku</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODÁL: NASTAVENÍ AI KLÍČE -->
+    <div id="settingsModal" class="fixed inset-0 z-50 hidden bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 class="font-bold text-lg">🔑 Nastavení AI klíče</h3>
+                <button type="button" onclick="appCloseSettings()" class="p-2 rounded-xl text-slate-400 hover:text-slate-600 cursor-pointer">✕</button>
+            </div>
+            <div class="space-y-3">
+                <p class="text-xs text-slate-600 dark:text-slate-300">
+                    Vložte svůj Gemini API klíč (začíná na <code>AIzaSy...</code>). Aplikace využívá rychlý model <code>gemini-3.5-flash-lite</code> vhodný i pro kolegy s bezplatným účtem.
+                </p>
+                <input id="apiKeyInput" type="text" placeholder="AIzaSy..." class="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm font-mono">
+                <div id="settingsTestStatus" class="hidden p-3.5 rounded-xl text-xs font-semibold leading-relaxed"></div>
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button type="button" onclick="appCloseSettings()" class="px-4 py-2.5 rounded-xl text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 cursor-pointer">Zavřít</button>
+                <button type="button" onclick="appSaveSettings()" class="px-5 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm cursor-pointer">Uložit klíč</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const STUDENTS_KEY = 'izus_final_students';
+        const ENTRIES_KEY = 'izus_final_entries';
+        const API_KEY_STORAGE = 'izus_final_api_key';
+        // Napevno nastavený rychlý a bezplatný model gemini-3.5-flash-lite
+        const FIXED_MODEL = 'gemini-3.5-flash-lite';
+
+        const memStore = {};
+        function setStore(k, v) { try { localStorage.setItem(k, v); } catch(e) { memStore[k] = v; } }
+        function getStore(k) { try { return localStorage.getItem(k); } catch(e) { return memStore[k] || null; } }
+
+        let students = [
+            { id: 'st-1', name: 'Josef klavír', instrument: 'klavír', icon: '🎹' },
+            { id: 'st-2', name: 'Pavlína kytara', instrument: 'kytara', icon: '🎸' },
+            { id: 'st-3', name: 'Mia klavír', instrument: 'klavír', icon: '🎹' },
+            { id: 'st-4', name: 'Kristýnka kytara', instrument: 'kytara', icon: '🎸' }
+        ];
+        let entries = [];
+        let activeStudentId = null;
+        let selectedInstrument = { name: 'klavír', icon: '🎹' };
+        let currentPhotoAttached = false;
+        // Paměť pro návrat k původnímu textu před pedagogickou úpravou
+        let textBeforePolish = null;
+
+        (function init() {
+            const d = document.getElementById('lessonDate');
+            if (d) d.value = new Date().toISOString().split('T')[0];
+            try {
+                const s = getStore(STUDENTS_KEY);
+                const e = getStore(ENTRIES_KEY);
+                if (s) students = JSON.parse(s);
+                if (e) entries = JSON.parse(e);
+            } catch (err) {}
+            appUpdateBadges();
+            appRenderHome();
+        })();
+
+        function saveState() {
+            setStore(STUDENTS_KEY, JSON.stringify(students));
+            setStore(ENTRIES_KEY, JSON.stringify(entries));
+        }
+
+        function appToggleTheme() {
+            document.documentElement.classList.toggle('dark');
+        }
+
+        function appAutoResize(el) {
+            if (!el) return;
+            el.style.height = 'auto';
+            el.style.height = Math.max(180, el.scrollHeight) + 'px';
+        }
+
+        function appUpdateBadges() {
+            const key = (getStore(API_KEY_STORAGE) || '').trim();
+            const btn = document.getElementById('openSettingsBtn');
+            const txt = document.getElementById('settingsStatusText');
+            const sub = document.getElementById('activeModelSub');
+            sub.textContent = 'Model: ' + FIXED_MODEL;
+            if (key) {
+                btn.className = 'px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-xs font-bold text-slate-950 flex items-center gap-1.5 transition cursor-pointer shadow-sm';
+                txt.textContent = 'AI Klíč aktivní ✓';
+            } else {
+                btn.className = 'px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-500 text-xs font-bold text-slate-950 flex items-center gap-1.5 transition cursor-pointer shadow-sm';
+                txt.textContent = 'Nastavit AI klíč';
+            }
+        }
+
+        function appOpenAddStudent() {
+            document.getElementById('newStudentNameInput').value = '';
+            document.getElementById('addStudentModal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('newStudentNameInput').focus(), 50);
+        }
+        function appCloseAddStudent() {
+            document.getElementById('addStudentModal').classList.add('hidden');
+        }
+        function appSelectInstrument(name, icon, btnId) {
+            selectedInstrument = { name, icon };
+            ['instBtn1', 'instBtn2', 'instBtn3'].forEach(id => {
+                const b = document.getElementById(id);
+                if (id === btnId) {
+                    b.className = 'inst-btn p-2.5 rounded-xl border-2 border-indigo-500 bg-indigo-50 dark:bg-indigo-950/60 text-xs font-semibold flex flex-col items-center gap-1 cursor-pointer';
+                } else {
+                    b.className = 'inst-btn p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold flex flex-col items-center gap-1 cursor-pointer';
+                }
+            });
+        }
+        function appConfirmAddStudent() {
+            const raw = document.getElementById('newStudentNameInput').value.trim();
+            if (!raw) { appToast('Zadejte jméno žáka.', 'error'); return; }
+            const fullName = raw.toLowerCase().includes(selectedInstrument.name) ? raw : `${raw} ${selectedInstrument.name}`;
+            students.push({ id: 'st-' + Date.now(), name: fullName, instrument: selectedInstrument.name, icon: selectedInstrument.icon });
+            saveState();
+            appCloseAddStudent();
+            appRenderHome();
+            appToast(`Složka „${fullName}“ vytvořena ✓`, 'success');
+        }
+
+        function appOpenSettings() {
+            document.getElementById('apiKeyInput').value = getStore(API_KEY_STORAGE) || '';
+            document.getElementById('settingsTestStatus').classList.add('hidden');
+            document.getElementById('settingsModal').classList.remove('hidden');
+        }
+        function appCloseSettings() {
+            document.getElementById('settingsModal').classList.add('hidden');
+        }
+        function appSaveSettings() {
+            const key = document.getElementById('apiKeyInput').value.trim();
+            const statusEl = document.getElementById('settingsTestStatus');
+            statusEl.classList.remove('hidden');
+
+            setStore(API_KEY_STORAGE, key);
+            appUpdateBadges();
+
+            if (!key) {
+                statusEl.className = 'p-3.5 rounded-xl text-xs font-semibold bg-rose-50 text-rose-800';
+                statusEl.textContent = 'Klíč byl vymazán.';
+                return;
+            }
+
+            statusEl.className = 'p-3.5 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-800';
+            statusEl.textContent = `✅ Klíč uložen! Používá se rychlý model ${FIXED_MODEL}.`;
+            setTimeout(appCloseSettings, 800);
+        }
+
+        // --- RYCHLÁ KOMPRESE FOTOGRAFIE NA ~50 KB ---
+        function shrinkImageToJpeg(blobOrFile) {
+            return new Promise((resolve, reject) => {
+                const url = URL.createObjectURL(blobOrFile);
+                const img = new Image();
+                const timer = setTimeout(() => {
+                    URL.revokeObjectURL(url);
+                    reject(new Error('TIMEOUT_DECODE'));
+                }, 4000);
+
+                img.onload = () => {
+                    clearTimeout(timer);
+                    URL.revokeObjectURL(url);
+                    const canvas = document.createElement('canvas');
+                    const maxDim = 800;
+                    let w = img.width;
+                    let h = img.height;
+                    if (w > h && w > maxDim) { h = Math.round((h * maxDim) / w); w = maxDim; }
+                    else if (h > maxDim) { w = Math.round((w * maxDim) / h); h = maxDim; }
+                    canvas.width = w;
+                    canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                    resolve({ base64: jpegDataUrl.split(',')[1], mime: 'image/jpeg', previewUrl: jpegDataUrl });
+                };
+                img.onerror = () => {
+                    clearTimeout(timer);
+                    URL.revokeObjectURL(url);
+                    reject(new Error('UNSUPPORTED_FORMAT'));
+                };
+                img.src = url;
+            });
+        }
+
+        async function preparePhotoFast(file, statusCallback) {
+            const name = (file.name || '').toLowerCase();
+            const isHeic = name.endsWith('.heic') || name.endsWith('.heif') || (file.type || '').includes('heic');
+
+            if (isHeic && typeof heic2any !== 'undefined') {
+                statusCallback('1/3 Převádím HEIC fotku na malý JPEG...');
+                try {
+                    const converted = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.7 });
+                    const jpgBlob = Array.isArray(converted) ? converted[0] : converted;
+                    return await shrinkImageToJpeg(jpgBlob);
+                } catch (e) {}
+            }
+
+            try {
+                statusCallback('1/3 Zmenšuji fotografii na ~50 kB...');
+                return await shrinkImageToJpeg(file);
+            } catch (e) {
+                statusCallback('1/3 Načítám původní soubor...');
+                return await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onerror = () => reject(new Error('Nelze přečíst soubor.'));
+                    reader.onload = (ev) => {
+                        resolve({
+                            base64: ev.target.result.split(',')[1],
+                            mime: isHeic ? 'image/heic' : (file.type || 'image/jpeg'),
+                            previewUrl: null
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+        }
+
+        // Volání modelu gemini-3.5-flash-lite
+        async function callGeminiLite(parts, signal) {
+            const apiKey = (getStore(API_KEY_STORAGE) || '').trim();
+            if (!apiKey) throw new Error('Chybí AI klíč.');
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${FIXED_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                signal: signal,
+                body: JSON.stringify({
+                    contents: [{ parts: parts }],
+                    generationConfig: { temperature: 0.15 }
+                })
+            });
+
+            const json = await response.json();
+            if (json.error) throw new Error(json.error.message);
+
+            const extracted = (json.candidates?.[0]?.content?.parts || [])
+                .filter(p => !p.thought)
+                .map(p => p.text || '')
+                .join(' ')
+                .trim();
+
+            if (!extracted) throw new Error('AI nevrátila žádný text.');
+            return extracted;
+        }
+
+        async function appHandlePhoto(inputEl) {
+            const file = inputEl.files && inputEl.files[0];
+            if (!file) return;
+
+            const apiKey = (getStore(API_KEY_STORAGE) || '').trim();
+            if (!apiKey) {
+                appToast('Nejprve vložte svůj AI klíč!', 'error');
+                appOpenSettings();
+                inputEl.value = '';
+                return;
+            }
+
+            const box = document.getElementById('photoPreviewBox');
+            const thumb = document.getElementById('photoThumb');
+            const spinner = document.getElementById('photoSpinnerBox');
+            const titleEl = document.getElementById('photoStatusTitle');
+            const subEl = document.getElementById('photoStatusSub');
+            const dictBox = document.getElementById('dictationInput');
+
+            box.classList.remove('hidden');
+            thumb.classList.add('hidden');
+            spinner.classList.remove('hidden');
+            spinner.textContent = '⏳';
+            titleEl.textContent = '1/3 Připravuji fotografii...';
+            subEl.textContent = file.name;
+
+            const startTime = Date.now();
+            const timerInterval = setInterval(() => {
+                const sec = ((Date.now() - startTime) / 1000).toFixed(1);
+                subEl.textContent = `Zpracovávám (${sec} s)...`;
+            }, 300);
+
+            try {
+                const photo = await preparePhotoFast(file, (msg) => { titleEl.textContent = msg; });
+                currentPhotoAttached = true;
+
+                if (photo.previewUrl) {
+                    thumb.src = photo.previewUrl;
+                    thumb.classList.remove('hidden');
+                }
+
+                const sizeKb = Math.round((photo.base64.length * 3) / 4 / 1024);
+                titleEl.textContent = `2/3 Odesláno (${sizeKb} kB) do ${FIXED_MODEL}...`;
+
+                const student = students.find(s => s.id === activeStudentId);
+                const inst = student ? student.instrument : 'hudební nástroj';
+                const prompt = `Přečti ručně psaný nebo tištěný zápis z této fotografie žákovského deníku/notýsku (obor ${inst}). Vypiš věrně a přehledně veškerou zapsanou látku (stupnice, etudy, skladby, poznámky). Vrať pouze samotný čistý přečtený text bez úvodních komentářů.`;
+
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+                const extracted = await callGeminiLite([
+                    { text: prompt },
+                    { inlineData: { mimeType: photo.mime, data: photo.base64 } }
+                ], controller.signal);
+
+                clearTimeout(timeoutId);
+                clearInterval(timerInterval);
+
+                const totalSec = ((Date.now() - startTime) / 1000).toFixed(1);
+                spinner.textContent = '✅';
+                titleEl.textContent = `3/3 Text z fotky přečten za ${totalSec} s!`;
+                subEl.textContent = 'Můžete ho rovnou uložit, nebo nechat pedagogicky upravit.';
+                dictBox.value = dictBox.value.trim() ? `${dictBox.value.trim()}\n${extracted}` : extracted;
+                textBeforePolish = null;
+                document.getElementById('undoPolishBtn').classList.add('hidden');
+                appAutoResize(dictBox);
+                dictBox.focus();
+                appToast(`Přečteno za ${totalSec} s ✓`, 'success');
+
+            } catch (err) {
+                clearInterval(timerInterval);
+                spinner.textContent = '❌';
+                titleEl.textContent = 'Chyba při čtení fotky:';
+                const msg = err.name === 'AbortError' ? 'Vypršel limit 30 vteřin.' : (err.message || String(err));
+                subEl.textContent = msg;
+                appToast('Chyba: ' + msg, 'error');
+            }
+        }
+
+        function appClearPhoto() {
+            currentPhotoAttached = false;
+            document.getElementById('photoInput').value = '';
+            document.getElementById('photoPreviewBox').classList.add('hidden');
+        }
+
+        function appClearText() {
+            const b = document.getElementById('dictationInput');
+            b.value = '';
+            b.style.height = '180px';
+            textBeforePolish = null;
+            document.getElementById('undoPolishBtn').classList.add('hidden');
+            b.focus();
+        }
+
+        // --- ZÁLOŽNÍ LOKÁLNÍ PŘEVODNÍK (KDYŽ CHYBÍ KLÍČ) ---
+        function localPedagogicalPolish(rawNote) {
+            const note = String(rawNote || '').trim();
+            if (!note) return '';
+            const segments = note.split(/[;,\n]+/).map(s => s.trim()).filter(Boolean);
+            const formatted = segments.map(seg => {
+                const lower = seg.toLowerCase();
+                if (lower.includes('upevnění prstokladu') || lower.includes('nácvik skladby') || lower.includes('technická cvičení')) {
+                    return seg.charAt(0).toUpperCase() + seg.slice(1);
+                }
+                if (lower.includes('stupnic')) return seg.charAt(0).toUpperCase() + seg.slice(1) + ' – upevnění prstokladu a tónové vyrovnanosti';
+                if (lower.includes('akord') || lower.includes('rozklad') || lower.includes('arpegg')) return 'Technická cvičení a nácvik akordických spojů (' + seg + ')';
+                if (lower.includes('etud') || lower.includes('cvičen')) return 'Studium technické etudy (' + seg + ') – artikulace a uvolnění ruky';
+                if (lower.includes('rytm') || lower.includes('počít') || lower.includes('takt')) return 'Práce na rytmické přesnosti a stabilitě tempa (' + seg + ')';
+                if (lower.includes('dynamik') || lower.includes('výraz') || lower.includes('fráz')) return 'Práce s dynamikou a hudebním výrazem (' + seg + ')';
+                if (lower.includes('prstoklad') || lower.includes('zápěstí') || lower.includes('úhoz')) return 'Korekce prstokladu a uvolnění herního aparátu (' + seg + ')';
+                return seg.charAt(0).toUpperCase() + seg.slice(1);
+            });
+            const res = formatted.join('. ').replace(/\.\./g, '.');
+            return /[.!?]$/.test(res) ? res : res + '.';
+        }
+
+        // Přirozené pedagogické přeformulování přes gemini-3.5-flash-lite (s fallbackem)
+        async function getSmartPolishedText(rawText) {
+            const apiKey = (getStore(API_KEY_STORAGE) || '').trim();
+            if (!apiKey) return localPedagogicalPolish(rawText);
+
+            try {
+                const student = students.find(s => s.id === activeStudentId);
+                const inst = student ? student.instrument : 'hudební obor';
+                const prompt = `Jsi učitel na české ZUŠ (obor ${inst}). Přepiš tyto surové poznámky z hodiny do stručného, přirozeného a spisovného zápisu do třídní knihy iZUŠ (1 až 2 věty). Zachovej všechny konkrétní názvy skladeb, stupnic, taktů a pokynů, nic si nevymýšlej a nepiš jméno žáka. Vrať pouze samotný výsledný text:\n\n${rawText}`;
+                return await callGeminiLite([{ text: prompt }]);
+            } catch (e) {
+                return localPedagogicalPolish(rawText);
+            }
+        }
+
+        // --- PŘEFORMULOVAT V OKNĚ + MOŽNOST VRÁTIT ZPĚT ---
+        async function appPolishInPlace() {
+            const b = document.getElementById('dictationInput');
+            const currentVal = b.value.trim();
+            if (!currentVal) {
+                appToast('Nejprve napište nebo načtěte text.', 'error');
+                return;
+            }
+
+            // Uložíme si původní znění pro tlačítko "Vrátit původní text"
+            textBeforePolish = b.value;
+
+            const polishBtn = document.getElementById('polishInPlaceBtn');
+            const origLabel = polishBtn.textContent;
+            polishBtn.textContent = '⏳ Upravuji...';
+
+            const polished = await getSmartPolishedText(currentVal);
+            b.value = polished;
+            appAutoResize(b);
+
+            polishBtn.textContent = origLabel;
+            document.getElementById('undoPolishBtn').classList.remove('hidden');
+            appToast('Text byl pedagogicky upraven (můžete ho vrátit tlačítkem ↩️ Zpět) ✨', 'success');
+        }
+
+        function appUndoPolish() {
+            if (textBeforePolish === null) return;
+            const b = document.getElementById('dictationInput');
+            b.value = textBeforePolish;
+            appAutoResize(b);
+            textBeforePolish = null;
+            document.getElementById('undoPolishBtn').classList.add('hidden');
+            appToast('Vrácen původní text ↩️', 'info');
+        }
+
+        // 1. TLAČÍTKO: ROVNOU ULOŽIT DO SLOŽKY (BEZ ÚPRAV)
+        function appSaveEntryDirect() {
+            if (!activeStudentId) return;
+            const b = document.getElementById('dictationInput');
+            const raw = b.value.trim();
+            if (!raw) { appToast('Textové pole je prázdné.', 'error'); return; }
+
+            entries.unshift({
+                id: 'ent-' + Date.now(),
+                studentId: activeStudentId,
+                date: document.getElementById('lessonDate').value || new Date().toISOString().split('T')[0],
+                polishedText: raw,
+                copied: false,
+                hasPhoto: currentPhotoAttached
+            });
+            saveState();
+            appClearText();
+            appClearPhoto();
+            appRenderStudentDetail();
+            appToast('Zápis byl rovnou uložen beze změn ✓', 'success');
+        }
+
+        // 2. TLAČÍTKO: PEDAGOGICKY UPRAVIT A ULOŽIT
+        async function appSaveEntryPolished() {
+            if (!activeStudentId) return;
+            const b = document.getElementById('dictationInput');
+            const raw = b.value.trim();
+            if (!raw) { appToast('Textové pole je prázdné.', 'error'); return; }
+
+            const btn = document.getElementById('savePolishedBtn');
+            const btnText = document.getElementById('savePolishedBtnText');
+            btn.disabled = true;
+            btnText.textContent = '⏳ Upravuji a ukládám...';
+
+            const polished = await getSmartPolishedText(raw);
+
+            entries.unshift({
+                id: 'ent-' + Date.now(),
+                studentId: activeStudentId,
+                date: document.getElementById('lessonDate').value || new Date().toISOString().split('T')[0],
+                polishedText: polished,
+                copied: false,
+                hasPhoto: currentPhotoAttached
+            });
+            saveState();
+            btn.disabled = false;
+            btnText.textContent = '✨ Pedagogicky upravit a uložit';
+            appClearText();
+            appClearPhoto();
+            appRenderStudentDetail();
+            appToast('Zápis pedagogicky upraven a uložen ✓', 'success');
+        }
+
+        function appStartDictation() {
+            const b = document.getElementById('dictationInput');
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SR) {
+                b.focus();
+                appToast('Stiskněte Win + H (na PC) nebo mikrofon na klávesnici telefonu.', 'info');
+                return;
+            }
+            try {
+                const rec = new SR();
+                rec.lang = 'cs-CZ';
+                rec.onstart = () => { document.getElementById('micBtnLabel').textContent = 'Poslouchám...'; };
+                rec.onresult = (e) => {
+                    const t = e.results[0][0].transcript;
+                    b.value = b.value.trim() ? `${b.value.trim()} ${t}` : t;
+                    appAutoResize(b);
+                };
+                rec.onerror = () => { b.focus(); appToast('Použijte Win + H nebo mikrofon na klávesnici.', 'info'); };
+                rec.onend = () => { document.getElementById('micBtnLabel').textContent = 'Nadiktovat hlasem'; };
+                rec.start();
+            } catch (e) {
+                b.focus();
+            }
+        }
+
+        function appSwitchTab(tab) {
+            if (tab === 'folders') {
+                document.getElementById('foldersSection').classList.remove('hidden');
+                document.getElementById('allPendingSection').classList.add('hidden');
+            } else {
+                document.getElementById('foldersSection').classList.add('hidden');
+                document.getElementById('allPendingSection').classList.remove('hidden');
+                appRenderAllPending();
+            }
+        }
+
+        function appOpenStudent(id) {
+            const st = students.find(s => s.id === id);
+            if (!st) return;
+            activeStudentId = id;
+            document.getElementById('homeView').classList.add('hidden');
+            document.getElementById('studentDetailView').classList.remove('hidden');
+            document.getElementById('detailStudentIcon').textContent = st.icon || '🎵';
+            document.getElementById('detailStudentName').textContent = st.name;
+            document.getElementById('detailStudentSub').textContent = 'Obor: ' + st.instrument;
+            appRenderStudentDetail();
+        }
+
+        function appCloseStudent() {
+            activeStudentId = null;
+            appClearPhoto();
+            appClearText();
+            document.getElementById('studentDetailView').classList.add('hidden');
+            document.getElementById('homeView').classList.remove('hidden');
+            appRenderHome();
+        }
+
+        function appDeleteCurrentStudent() {
+            if (!activeStudentId) return;
+            students = students.filter(s => s.id !== activeStudentId);
+            entries = entries.filter(e => e.studentId !== activeStudentId);
+            saveState();
+            appCloseStudent();
+        }
+
+        function appRenderHome() {
+            const grid = document.getElementById('studentsGrid');
+            document.getElementById('globalPendingBadge').textContent = entries.filter(e => !e.copied).length;
+            grid.innerHTML = '';
+            students.forEach(st => {
+                const pending = entries.filter(e => e.studentId === st.id && !e.copied).length;
+                const card = document.createElement('div');
+                card.className = 'cursor-pointer bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 hover:border-indigo-500 transition flex items-center justify-between gap-3';
+                card.onclick = () => appOpenStudent(st.id);
+                card.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-11 h-11 rounded-2xl bg-indigo-50 dark:bg-slate-800 flex items-center justify-center text-2xl">${st.icon || '🎵'}</div>
+                        <h3 class="font-bold text-base">${escapeHtml(st.name)}</h3>
+                    </div>
+                    <span class="px-2.5 py-1 rounded-full text-xs font-bold ${pending > 0 ? 'bg-amber-100 text-amber-800' : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'}">
+                        ${pending > 0 ? pending + ' ke zkopírování' : 'Vše v iZUŠ ✓'}
+                    </span>
+                `;
+                grid.appendChild(card);
+            });
+            appRenderAllPending();
+        }
+
+        function appRenderAllPending() {
+            const c = document.getElementById('allPendingList');
+            const pending = entries.filter(e => !e.copied);
+            c.innerHTML = pending.length === 0 ? '<p class="text-sm text-slate-500 text-center py-8">Vše zkopírováno!</p>' : '';
+            pending.forEach(entry => {
+                const st = students.find(s => s.id === entry.studentId);
+                c.appendChild(buildEntryCard(entry, st ? `${st.icon} ${st.name}` : 'Žák'));
+            });
+        }
+
+        function appRenderStudentDetail() {
+            if (!activeStudentId) return;
+            const all = entries.filter(e => e.studentId === activeStudentId);
+            const pending = all.filter(e => !e.copied);
+            const copied = all.filter(e => e.copied);
+            document.getElementById('studentPendingCount').textContent = pending.length;
+            document.getElementById('studentCopiedCount').textContent = copied.length;
+
+            const pList = document.getElementById('studentPendingList');
+            pList.innerHTML = pending.length === 0 ? '<p class="text-sm text-slate-500 text-center py-6">Žádné nezkopírované zápisy.</p>' : '';
+            pending.forEach(e => pList.appendChild(buildEntryCard(e, null)));
+
+            const cList = document.getElementById('studentCopiedList');
+            cList.innerHTML = '';
+            copied.forEach(e => cList.appendChild(buildEntryCard(e, null)));
+        }
+
+        function buildEntryCard(entry, studentLabel) {
+            const div = document.createElement('div');
+            div.className = 'p-4 rounded-2xl border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm space-y-2.5';
+            div.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-bold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800">📅 ${entry.date} ${studentLabel ? '• ' + escapeHtml(studentLabel) : ''}</span>
+                    <button type="button" class="del-btn text-xs text-slate-400 hover:text-rose-500 p-1 cursor-pointer">✕</button>
+                </div>
+                <textarea rows="3" class="edit-ta w-full p-3 text-sm sm:text-base rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">${escapeHtml(entry.polishedText)}</textarea>
+                <div class="flex justify-between items-center">
+                    <button type="button" class="status-btn text-xs font-medium ${entry.copied ? 'text-emerald-500' : 'text-amber-500'} cursor-pointer">
+                        ${entry.copied ? '✓ Zapsáno v iZUŠ (Vrátit)' : 'Čeká na přepis'}
+                    </button>
+                    <button type="button" class="copy-btn px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer">
+                        Kopírovat do iZUŠ
+                    </button>
+                </div>
+            `;
+            div.querySelector('.edit-ta').oninput = function() {
+                entry.polishedText = this.value;
+                saveState();
+            };
+            div.querySelector('.copy-btn').onclick = function() {
+                navigator.clipboard?.writeText(entry.polishedText);
+                entry.copied = true;
+                saveState();
+                appToast('Zkopírováno do schránky ✓', 'success');
+                appRenderStudentDetail();
+                appRenderHome();
+            };
+            div.querySelector('.status-btn').onclick = function() {
+                entry.copied = !entry.copied;
+                saveState();
+                appRenderStudentDetail();
+                appRenderHome();
+            };
+            div.querySelector('.del-btn').onclick = function() {
+                entries = entries.filter(x => x.id !== entry.id);
+                saveState();
+                appRenderStudentDetail();
+                appRenderHome();
+            };
+            return div;
+        }
+
+        function escapeHtml(str) {
+            return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function appToast(msg, type) {
+            const c = document.getElementById('toastContainer');
+            const t = document.createElement('div');
+            const bg = type === 'error' ? 'bg-rose-600' : (type === 'success' ? 'bg-emerald-600' : 'bg-slate-800');
+            t.className = `${bg} text-white px-4 py-3 rounded-xl shadow-lg text-xs sm:text-sm font-medium`;
+            t.textContent = msg;
+            c.appendChild(t);
+            setTimeout(() => t.remove(), 3500);
+        }
+    </script>
+</body>
+</html>
