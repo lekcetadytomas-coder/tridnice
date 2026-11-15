@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="iZUŠ Třídnice">
     <title>iZUŠ Třídnice & AI Zapisovač</title>
     <script>
         const origWarn = console.warn;
@@ -39,11 +42,19 @@
                 </div>
             </div>
 
-            <div class="flex items-center gap-2">
-                <button id="openSettingsBtn" type="button" onclick="appOpenSettings()" class="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-500 text-xs font-bold text-slate-950 flex items-center gap-1.5 transition cursor-pointer shadow-sm">
-                    <span>🔑</span>
-                    <span id="settingsStatusText">Nastavit AI klíč</span>
+            <div class="flex items-center gap-1.5 sm:gap-2">
+                <!-- Indikátor a tlačítko synchronizace s Google Tabulkou -->
+                <button id="syncSheetBtn" type="button" onclick="appPullFromGoogleSheet(true)" title="Načíst nejnovější data z Google Tabulky" class="px-2.5 py-1.5 rounded-xl bg-indigo-800/80 hover:bg-indigo-800 text-xs font-medium text-indigo-100 flex items-center gap-1.5 transition cursor-pointer">
+                    <span id="syncDot" class="w-2 h-2 rounded-full bg-amber-400"></span>
+                    <span id="syncLabel" class="hidden sm:inline">Lokální režim</span>
                 </button>
+
+                <!-- Tlačítko Nastavení (AI Klíč + URL Tabulky) -->
+                <button id="openSettingsBtn" type="button" onclick="appOpenSettings()" class="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-500 text-xs font-bold text-slate-950 flex items-center gap-1.5 transition cursor-pointer shadow-sm">
+                    <span>⚙️</span>
+                    <span id="settingsStatusText">Nastavení</span>
+                </button>
+
                 <button type="button" onclick="appToggleTheme()" class="p-2 rounded-xl bg-indigo-800/80 dark:bg-slate-800 text-indigo-100 hover:bg-indigo-800 transition cursor-pointer">
                     🌓
                 </button>
@@ -147,7 +158,6 @@
                             Text látky (můžete uložit rovnou, nebo nechat pedagogicky učesat):
                         </label>
                         <div class="flex flex-wrap items-center gap-3">
-                            <!-- Tlačítko ZPĚT (zobrazí se po přeformulování) -->
                             <button id="undoPolishBtn" type="button" onclick="appUndoPolish()" class="hidden text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 hover:bg-amber-200 transition cursor-pointer">
                                 ↩️ Vrátit původní text
                             </button>
@@ -245,23 +255,34 @@
         </div>
     </div>
 
-    <!-- MODÁL: NASTAVENÍ AI KLÍČE -->
+    <!-- MODÁL: NASTAVENÍ AI KLÍČE A PROPOJENÍ S GOOGLE TABULKOU -->
     <div id="settingsModal" class="fixed inset-0 z-50 hidden bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
             <div class="flex items-center justify-between">
-                <h3 class="font-bold text-lg">🔑 Nastavení AI klíče</h3>
+                <h3 class="font-bold text-lg">⚙️ Nastavení AI & Google Tabulky</h3>
                 <button type="button" onclick="appCloseSettings()" class="p-2 rounded-xl text-slate-400 hover:text-slate-600 cursor-pointer">✕</button>
             </div>
-            <div class="space-y-3">
-                <p class="text-xs text-slate-600 dark:text-slate-300">
-                    Vložte svůj Gemini API klíč (začíná na <code>AIzaSy...</code>). Aplikace využívá rychlý model <code>gemini-3.5-flash-lite</code> vhodný i pro kolegy s bezplatným účtem.
-                </p>
-                <input id="apiKeyInput" type="text" placeholder="AIzaSy..." class="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm font-mono">
+            <div class="space-y-4">
+                <!-- 1. AI Klíč -->
+                <div>
+                    <label class="block text-xs font-bold uppercase text-indigo-500 mb-1">1. Gemini API Klíč (pro čtení fotek za 1,6 s)</label>
+                    <input id="apiKeyInput" type="text" placeholder="AIzaSy..." class="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm font-mono">
+                </div>
+
+                <!-- 2. URL Google Tabulky -->
+                <div>
+                    <label class="block text-xs font-bold uppercase text-emerald-500 mb-1">2. URL vaší Google Tabulky (končící na /exec)</label>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-1.5">
+                        Vložte sem odkaz z Apps Scriptu (Implementovat → Webová aplikace). Všechny zápisy i žáci se budou automaticky propisovat do tabulky.
+                    </p>
+                    <input id="sheetUrlInput" type="url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-mono">
+                </div>
+
                 <div id="settingsTestStatus" class="hidden p-3.5 rounded-xl text-xs font-semibold leading-relaxed"></div>
             </div>
             <div class="flex justify-end gap-2 pt-2">
                 <button type="button" onclick="appCloseSettings()" class="px-4 py-2.5 rounded-xl text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 cursor-pointer">Zavřít</button>
-                <button type="button" onclick="appSaveSettings()" class="px-5 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm cursor-pointer">Uložit klíč</button>
+                <button type="button" onclick="appSaveSettings()" class="px-5 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm cursor-pointer">Uložit a synchronizovat</button>
             </div>
         </div>
     </div>
@@ -270,7 +291,7 @@
         const STUDENTS_KEY = 'izus_final_students';
         const ENTRIES_KEY = 'izus_final_entries';
         const API_KEY_STORAGE = 'izus_final_api_key';
-        // Napevno nastavený rychlý a bezplatný model gemini-3.5-flash-lite
+        const SHEET_URL_STORAGE = 'izus_final_sheet_url';
         const FIXED_MODEL = 'gemini-3.5-flash-lite';
 
         const memStore = {};
@@ -287,7 +308,6 @@
         let activeStudentId = null;
         let selectedInstrument = { name: 'klavír', icon: '🎹' };
         let currentPhotoAttached = false;
-        // Paměť pro návrat k původnímu textu před pedagogickou úpravou
         let textBeforePolish = null;
 
         (function init() {
@@ -301,11 +321,71 @@
             } catch (err) {}
             appUpdateBadges();
             appRenderHome();
+            // Automatické načtení dat z Google Tabulky při startu
+            appPullFromGoogleSheet(false);
         })();
 
         function saveState() {
             setStore(STUDENTS_KEY, JSON.stringify(students));
             setStore(ENTRIES_KEY, JSON.stringify(entries));
+        }
+
+        function setSheetSyncIndicator(text, status) {
+            const dot = document.getElementById('syncDot');
+            const label = document.getElementById('syncLabel');
+            if (label) label.textContent = text;
+            if (dot) {
+                if (status === 'ok') dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+                else if (status === 'busy') dot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-pulse';
+                else dot.className = 'w-2 h-2 rounded-full bg-slate-400';
+            }
+        }
+
+        // --- KOMUNIKACE S GOOGLE TABULKOU (ČTENÍ I ZÁPIS) ---
+        async function appPullFromGoogleSheet(showNotification) {
+            const sheetUrl = (getStore(SHEET_URL_STORAGE) || '').trim();
+            if (!sheetUrl) {
+                setSheetSyncIndicator('Lokální režim', 'local');
+                if (showNotification) appToast('Nejprve v Nastavení vložte URL své Google Tabulky (/exec).', 'info');
+                return;
+            }
+
+            setSheetSyncIndicator('Načítám Tabulku...', 'busy');
+            try {
+                const resp = await fetch(sheetUrl + '?t=' + Date.now());
+                const data = await resp.json();
+                if (data && Array.isArray(data.students) && data.students.length > 0) {
+                    students = data.students;
+                }
+                if (data && Array.isArray(data.entries)) {
+                    entries = data.entries;
+                }
+                saveState();
+                appRenderHome();
+                if (activeStudentId) appRenderStudentDetail();
+                setSheetSyncIndicator('Tabulka propojena ✓', 'ok');
+                if (showNotification) appToast('Data z Google Tabulky byla aktualizována ✓', 'success');
+            } catch (err) {
+                setSheetSyncIndicator('Chyba Tabulky', 'local');
+                if (showNotification) appToast('Nepodařilo se načíst Google Tabulku. Zkontrolujte URL v Nastavení.', 'error');
+            }
+        }
+
+        function appPushToGoogleSheet(payload) {
+            const sheetUrl = (getStore(SHEET_URL_STORAGE) || '').trim();
+            if (!sheetUrl) return;
+
+            setSheetSyncIndicator('Zapisuji do Tabulky...', 'busy');
+            fetch(sheetUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload)
+            }).then(() => {
+                setSheetSyncIndicator('Uloženo v Tabulce ✓', 'ok');
+            }).catch(() => {
+                setSheetSyncIndicator('Uloženo lokálně', 'local');
+            });
         }
 
         function appToggleTheme() {
@@ -320,16 +400,21 @@
 
         function appUpdateBadges() {
             const key = (getStore(API_KEY_STORAGE) || '').trim();
+            const sheetUrl = (getStore(SHEET_URL_STORAGE) || '').trim();
             const btn = document.getElementById('openSettingsBtn');
             const txt = document.getElementById('settingsStatusText');
             const sub = document.getElementById('activeModelSub');
             sub.textContent = 'Model: ' + FIXED_MODEL;
-            if (key) {
+
+            if (key && sheetUrl) {
                 btn.className = 'px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-xs font-bold text-slate-950 flex items-center gap-1.5 transition cursor-pointer shadow-sm';
-                txt.textContent = 'AI Klíč aktivní ✓';
+                txt.textContent = 'AI + Tabulka ✓';
+            } else if (key) {
+                btn.className = 'px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-xs font-bold text-slate-950 flex items-center gap-1.5 transition cursor-pointer shadow-sm';
+                txt.textContent = 'AI aktivní ✓';
             } else {
                 btn.className = 'px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-500 text-xs font-bold text-slate-950 flex items-center gap-1.5 transition cursor-pointer shadow-sm';
-                txt.textContent = 'Nastavit AI klíč';
+                txt.textContent = 'Nastavení';
             }
         }
 
@@ -356,38 +441,41 @@
             const raw = document.getElementById('newStudentNameInput').value.trim();
             if (!raw) { appToast('Zadejte jméno žáka.', 'error'); return; }
             const fullName = raw.toLowerCase().includes(selectedInstrument.name) ? raw : `${raw} ${selectedInstrument.name}`;
-            students.push({ id: 'st-' + Date.now(), name: fullName, instrument: selectedInstrument.name, icon: selectedInstrument.icon });
+            const newSt = { id: 'st-' + Date.now(), name: fullName, instrument: selectedInstrument.name, icon: selectedInstrument.icon };
+            students.push(newSt);
             saveState();
+            appPushToGoogleSheet({ action: 'addStudent', student: newSt });
             appCloseAddStudent();
             appRenderHome();
-            appToast(`Složka „${fullName}“ vytvořena ✓`, 'success');
+            appToast(`Složka „${fullName}“ vytvořena a zapsána do Tabulky ✓`, 'success');
         }
 
         function appOpenSettings() {
             document.getElementById('apiKeyInput').value = getStore(API_KEY_STORAGE) || '';
+            document.getElementById('sheetUrlInput').value = getStore(SHEET_URL_STORAGE) || '';
             document.getElementById('settingsTestStatus').classList.add('hidden');
             document.getElementById('settingsModal').classList.remove('hidden');
         }
         function appCloseSettings() {
             document.getElementById('settingsModal').classList.add('hidden');
         }
-        function appSaveSettings() {
+        async function appSaveSettings() {
             const key = document.getElementById('apiKeyInput').value.trim();
+            const sheetUrl = document.getElementById('sheetUrlInput').value.trim();
             const statusEl = document.getElementById('settingsTestStatus');
             statusEl.classList.remove('hidden');
 
             setStore(API_KEY_STORAGE, key);
+            setStore(SHEET_URL_STORAGE, sheetUrl);
             appUpdateBadges();
 
-            if (!key) {
-                statusEl.className = 'p-3.5 rounded-xl text-xs font-semibold bg-rose-50 text-rose-800';
-                statusEl.textContent = 'Klíč byl vymazán.';
-                return;
-            }
-
             statusEl.className = 'p-3.5 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-800';
-            statusEl.textContent = `✅ Klíč uložen! Používá se rychlý model ${FIXED_MODEL}.`;
-            setTimeout(appCloseSettings, 800);
+            statusEl.textContent = '✅ Nastavení uloženo!';
+
+            if (sheetUrl) {
+                await appPullFromGoogleSheet(true);
+            }
+            setTimeout(appCloseSettings, 700);
         }
 
         // --- RYCHLÁ KOMPRESE FOTOGRAFIE NA ~50 KB ---
@@ -457,7 +545,6 @@
             }
         }
 
-        // Volání modelu gemini-3.5-flash-lite
         async function callGeminiLite(parts, signal) {
             const apiKey = (getStore(API_KEY_STORAGE) || '').trim();
             if (!apiKey) throw new Error('Chybí AI klíč.');
@@ -581,7 +668,6 @@
             b.focus();
         }
 
-        // --- ZÁLOŽNÍ LOKÁLNÍ PŘEVODNÍK (KDYŽ CHYBÍ KLÍČ) ---
         function localPedagogicalPolish(rawNote) {
             const note = String(rawNote || '').trim();
             if (!note) return '';
@@ -603,7 +689,6 @@
             return /[.!?]$/.test(res) ? res : res + '.';
         }
 
-        // Přirozené pedagogické přeformulování přes gemini-3.5-flash-lite (s fallbackem)
         async function getSmartPolishedText(rawText) {
             const apiKey = (getStore(API_KEY_STORAGE) || '').trim();
             if (!apiKey) return localPedagogicalPolish(rawText);
@@ -618,7 +703,6 @@
             }
         }
 
-        // --- PŘEFORMULOVAT V OKNĚ + MOŽNOST VRÁTIT ZPĚT ---
         async function appPolishInPlace() {
             const b = document.getElementById('dictationInput');
             const currentVal = b.value.trim();
@@ -627,9 +711,7 @@
                 return;
             }
 
-            // Uložíme si původní znění pro tlačítko "Vrátit původní text"
             textBeforePolish = b.value;
-
             const polishBtn = document.getElementById('polishInPlaceBtn');
             const origLabel = polishBtn.textContent;
             polishBtn.textContent = '⏳ Upravuji...';
@@ -640,7 +722,7 @@
 
             polishBtn.textContent = origLabel;
             document.getElementById('undoPolishBtn').classList.remove('hidden');
-            appToast('Text byl pedagogicky upraven (můžete ho vrátit tlačítkem ↩️ Zpět) ✨', 'success');
+            appToast('Text byl pedagogicky upraven (lze vrátit tlačítkem ↩️ Zpět) ✨', 'success');
         }
 
         function appUndoPolish() {
@@ -653,29 +735,33 @@
             appToast('Vrácen původní text ↩️', 'info');
         }
 
-        // 1. TLAČÍTKO: ROVNOU ULOŽIT DO SLOŽKY (BEZ ÚPRAV)
+        // 1. ROVNOU ULOŽIT DO SLOŽKY I DO GOOGLE TABULKY
         function appSaveEntryDirect() {
             if (!activeStudentId) return;
             const b = document.getElementById('dictationInput');
             const raw = b.value.trim();
             if (!raw) { appToast('Textové pole je prázdné.', 'error'); return; }
 
-            entries.unshift({
+            const newEntry = {
                 id: 'ent-' + Date.now(),
                 studentId: activeStudentId,
                 date: document.getElementById('lessonDate').value || new Date().toISOString().split('T')[0],
                 polishedText: raw,
                 copied: false,
-                hasPhoto: currentPhotoAttached
-            });
+                hasPhoto: currentPhotoAttached,
+                createdAt: Date.now()
+            };
+
+            entries.unshift(newEntry);
             saveState();
+            appPushToGoogleSheet({ action: 'addEntry', entry: newEntry });
             appClearText();
             appClearPhoto();
             appRenderStudentDetail();
-            appToast('Zápis byl rovnou uložen beze změn ✓', 'success');
+            appToast('Zápis uložen do složky i do Google Tabulky ✓', 'success');
         }
 
-        // 2. TLAČÍTKO: PEDAGOGICKY UPRAVIT A ULOŽIT
+        // 2. PEDAGOGICKY UPRAVIT A ULOŽIT DO SLOŽKY I DO GOOGLE TABULKY
         async function appSaveEntryPolished() {
             if (!activeStudentId) return;
             const b = document.getElementById('dictationInput');
@@ -689,21 +775,26 @@
 
             const polished = await getSmartPolishedText(raw);
 
-            entries.unshift({
+            const newEntry = {
                 id: 'ent-' + Date.now(),
                 studentId: activeStudentId,
                 date: document.getElementById('lessonDate').value || new Date().toISOString().split('T')[0],
                 polishedText: polished,
                 copied: false,
-                hasPhoto: currentPhotoAttached
-            });
+                hasPhoto: currentPhotoAttached,
+                createdAt: Date.now()
+            };
+
+            entries.unshift(newEntry);
             saveState();
+            appPushToGoogleSheet({ action: 'addEntry', entry: newEntry });
+
             btn.disabled = false;
             btnText.textContent = '✨ Pedagogicky upravit a uložit';
             appClearText();
             appClearPhoto();
             appRenderStudentDetail();
-            appToast('Zápis pedagogicky upraven a uložen ✓', 'success');
+            appToast('Zápis pedagogicky upraven a uložen do Tabulky ✓', 'success');
         }
 
         function appStartDictation() {
@@ -765,9 +856,11 @@
 
         function appDeleteCurrentStudent() {
             if (!activeStudentId) return;
-            students = students.filter(s => s.id !== activeStudentId);
-            entries = entries.filter(e => e.studentId !== activeStudentId);
+            const idToDel = activeStudentId;
+            students = students.filter(s => s.id !== idToDel);
+            entries = entries.filter(e => e.studentId !== idToDel);
             saveState();
+            appPushToGoogleSheet({ action: 'deleteStudent', studentId: idToDel });
             appCloseStudent();
         }
 
@@ -839,27 +932,35 @@
                     </button>
                 </div>
             `;
+            let editTimer = null;
             div.querySelector('.edit-ta').oninput = function() {
                 entry.polishedText = this.value;
                 saveState();
+                clearTimeout(editTimer);
+                editTimer = setTimeout(() => {
+                    appPushToGoogleSheet({ action: 'updateText', id: entry.id, text: entry.polishedText });
+                }, 700);
             };
             div.querySelector('.copy-btn').onclick = function() {
                 navigator.clipboard?.writeText(entry.polishedText);
                 entry.copied = true;
                 saveState();
-                appToast('Zkopírováno do schránky ✓', 'success');
+                appPushToGoogleSheet({ action: 'setCopied', id: entry.id, copied: true });
+                appToast('Zkopírováno do schránky a označeno v Tabulce ✓', 'success');
                 appRenderStudentDetail();
                 appRenderHome();
             };
             div.querySelector('.status-btn').onclick = function() {
                 entry.copied = !entry.copied;
                 saveState();
+                appPushToGoogleSheet({ action: 'setCopied', id: entry.id, copied: entry.copied });
                 appRenderStudentDetail();
                 appRenderHome();
             };
             div.querySelector('.del-btn').onclick = function() {
                 entries = entries.filter(x => x.id !== entry.id);
                 saveState();
+                appPushToGoogleSheet({ action: 'deleteEntry', id: entry.id });
                 appRenderStudentDetail();
                 appRenderHome();
             };
