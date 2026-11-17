@@ -80,7 +80,7 @@
                 </div>
 
                 <button type="button" onclick="appOpenAddStudent()" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-md flex items-center gap-2 transition cursor-pointer">
-                    <span>+ Přidat žáka</span>
+                    <span>+ Přidat složku / žáka</span>
                 </button>
             </div>
 
@@ -93,7 +93,7 @@
             </div>
         </div>
 
-        <!-- POHLED 2: DETAIL ŽÁKA -->
+        <!-- POHLED 2: DETAIL ŽÁKA / SKUPINY -->
         <div id="studentDetailView" class="hidden space-y-5">
             <div class="flex items-center justify-between bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
                 <div class="flex items-center gap-3">
@@ -108,7 +108,7 @@
                         <p id="detailStudentSub" class="text-xs text-slate-500 dark:text-slate-400">Složka žáka</p>
                     </div>
                 </div>
-                <button type="button" onclick="appDeleteCurrentStudent()" title="Smazat složku žáka" class="p-2 text-slate-400 hover:text-rose-600 rounded-xl transition cursor-pointer">🗑️</button>
+                <button type="button" onclick="appDeleteCurrentStudent()" title="Smazat složku" class="p-2 text-slate-400 hover:text-rose-600 rounded-xl transition cursor-pointer">🗑️</button>
             </div>
 
             <section class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-4 sm:p-5 space-y-4">
@@ -221,21 +221,21 @@
         </div>
     </main>
 
-    <!-- MODÁL: + PŘIDAT ŽÁKA -->
+    <!-- MODÁL: + PŘIDAT ŽÁKA / SKUPINU (5 OBORŮ) -->
     <div id="addStudentModal" class="fixed inset-0 z-50 hidden bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
             <div class="flex items-center justify-between">
-                <h3 class="font-bold text-lg">Nová složka žáka</h3>
+                <h3 class="font-bold text-lg">Nová složka žáka / skupiny</h3>
                 <button type="button" onclick="appCloseAddStudent()" class="p-2 rounded-xl text-slate-400 hover:text-slate-600 cursor-pointer">✕</button>
             </div>
             <div class="space-y-3">
                 <div>
-                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Jméno / označení žáka</label>
-                    <input id="newStudentNameInput" type="text" onkeydown="if(event.key==='Enter') appConfirmAddStudent()" placeholder="např. Josef, Pavlína, Mia..." class="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Jméno žáka nebo označení skupiny</label>
+                    <input id="newStudentNameInput" type="text" onkeydown="if(event.key==='Enter') appConfirmAddStudent()" placeholder="např. Josef, Mia, Úterý 15:00..." class="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Nástroj / Obor</label>
-                    <div class="grid grid-cols-3 gap-2">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
                         <button type="button" id="instBtn1" onclick="appSelectInstrument('klavír','🎹','instBtn1')" class="inst-btn p-2.5 rounded-xl border-2 border-indigo-500 bg-indigo-50 dark:bg-indigo-950/60 text-xs font-semibold flex flex-col items-center gap-1 cursor-pointer">
                             <span class="text-lg">🎹</span><span>Klavír</span>
                         </button>
@@ -244,6 +244,12 @@
                         </button>
                         <button type="button" id="instBtn3" onclick="appSelectInstrument('el. kytara','⚡','instBtn3')" class="inst-btn p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold flex flex-col items-center gap-1 cursor-pointer">
                             <span class="text-lg">⚡</span><span>El. kytara</span>
+                        </button>
+                        <button type="button" id="instBtn4" onclick="appSelectInstrument('hudební dílna','🎼','instBtn4')" class="inst-btn p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold flex flex-col items-center gap-1 cursor-pointer">
+                            <span class="text-lg">🎼</span><span>Hudební dílna</span>
+                        </button>
+                        <button type="button" id="instBtn5" onclick="appSelectInstrument('komorní hra','🥁','instBtn5')" class="inst-btn p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold flex flex-col items-center gap-1 cursor-pointer">
+                            <span class="text-lg">🥁</span><span>Komorní hra</span>
                         </button>
                     </div>
                 </div>
@@ -263,13 +269,11 @@
                 <button type="button" onclick="appCloseSettings()" class="p-2 rounded-xl text-slate-400 hover:text-slate-600 cursor-pointer">✕</button>
             </div>
             <div class="space-y-4">
-                <!-- 1. AI Klíč -->
                 <div>
                     <label class="block text-xs font-bold uppercase text-indigo-500 mb-1">1. Gemini API Klíč (pro čtení fotek za 1,6 s)</label>
                     <input id="apiKeyInput" type="text" placeholder="AIzaSy..." class="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm font-mono">
                 </div>
 
-                <!-- 2. URL Google Tabulky -->
                 <div>
                     <label class="block text-xs font-bold uppercase text-emerald-500 mb-1">2. URL vaší Google Tabulky (končící na /exec)</label>
                     <p class="text-xs text-slate-500 dark:text-slate-400 mb-1.5">
@@ -321,7 +325,6 @@
             } catch (err) {}
             appUpdateBadges();
             appRenderHome();
-            // Automatické načtení dat z Google Tabulky při startu
             appPullFromGoogleSheet(false);
         })();
 
@@ -341,7 +344,6 @@
             }
         }
 
-        // --- KOMUNIKACE S GOOGLE TABULKOU (ČTENÍ I ZÁPIS) ---
         async function appPullFromGoogleSheet(showNotification) {
             const sheetUrl = (getStore(SHEET_URL_STORAGE) || '').trim();
             if (!sheetUrl) {
@@ -428,8 +430,9 @@
         }
         function appSelectInstrument(name, icon, btnId) {
             selectedInstrument = { name, icon };
-            ['instBtn1', 'instBtn2', 'instBtn3'].forEach(id => {
+            ['instBtn1', 'instBtn2', 'instBtn3', 'instBtn4', 'instBtn5'].forEach(id => {
                 const b = document.getElementById(id);
+                if (!b) return;
                 if (id === btnId) {
                     b.className = 'inst-btn p-2.5 rounded-xl border-2 border-indigo-500 bg-indigo-50 dark:bg-indigo-950/60 text-xs font-semibold flex flex-col items-center gap-1 cursor-pointer';
                 } else {
@@ -439,8 +442,8 @@
         }
         function appConfirmAddStudent() {
             const raw = document.getElementById('newStudentNameInput').value.trim();
-            if (!raw) { appToast('Zadejte jméno žáka.', 'error'); return; }
-            const fullName = raw.toLowerCase().includes(selectedInstrument.name) ? raw : `${raw} ${selectedInstrument.name}`;
+            if (!raw) { appToast('Zadejte jméno žáka nebo označení skupiny.', 'error'); return; }
+            const fullName = raw.toLowerCase().includes(selectedInstrument.name) ? raw : `${raw} (${selectedInstrument.name})`;
             const newSt = { id: 'st-' + Date.now(), name: fullName, instrument: selectedInstrument.name, icon: selectedInstrument.icon };
             students.push(newSt);
             saveState();
@@ -478,7 +481,6 @@
             setTimeout(appCloseSettings, 700);
         }
 
-        // --- RYCHLÁ KOMPRESE FOTOGRAFIE NA ~50 KB ---
         function shrinkImageToJpeg(blobOrFile) {
             return new Promise((resolve, reject) => {
                 const url = URL.createObjectURL(blobOrFile);
@@ -671,11 +673,20 @@
         function localPedagogicalPolish(rawNote) {
             const note = String(rawNote || '').trim();
             if (!note) return '';
+            const student = students.find(s => s.id === activeStudentId);
+            const inst = student ? (student.instrument || '').toLowerCase() : '';
+
             const segments = note.split(/[;,\n]+/).map(s => s.trim()).filter(Boolean);
             const formatted = segments.map(seg => {
                 const lower = seg.toLowerCase();
-                if (lower.includes('upevnění prstokladu') || lower.includes('nácvik skladby') || lower.includes('technická cvičení')) {
+                if (lower.includes('upevnění prstokladu') || lower.includes('nácvik skladby') || lower.includes('technická cvičení') || lower.includes('ansámbl')) {
                     return seg.charAt(0).toUpperCase() + seg.slice(1);
+                }
+                if (inst.includes('komorní')) {
+                    return 'Komorní souhra a rytmicko-intonační sjednocení ansámblu (' + seg + ')';
+                }
+                if (inst.includes('dílna')) {
+                    return 'Kolektivní hudební a rytmicko-intonační průprava (' + seg + ')';
                 }
                 if (lower.includes('stupnic')) return seg.charAt(0).toUpperCase() + seg.slice(1) + ' – upevnění prstokladu a tónové vyrovnanosti';
                 if (lower.includes('akord') || lower.includes('rozklad') || lower.includes('arpegg')) return 'Technická cvičení a nácvik akordických spojů (' + seg + ')';
@@ -696,7 +707,7 @@
             try {
                 const student = students.find(s => s.id === activeStudentId);
                 const inst = student ? student.instrument : 'hudební obor';
-                const prompt = `Jsi učitel na české ZUŠ (obor ${inst}). Přepiš tyto surové poznámky z hodiny do stručného, přirozeného a spisovného zápisu do třídní knihy iZUŠ (1 až 2 věty). Zachovej všechny konkrétní názvy skladeb, stupnic, taktů a pokynů, nic si nevymýšlej a nepiš jméno žáka. Vrať pouze samotný výsledný text:\n\n${rawText}`;
+                const prompt = `Jsi učitel na české ZUŠ (předmět/obor: ${inst}). Přepiš tyto surové poznámky z hodiny do stručného, přirozeného a spisovného zápisu do třídní knihy iZUŠ (1 až 2 věty). Zachovej všechny konkrétní názvy skladeb, stupnic, taktů a pokynů, nic si nevymýšlej a nepiš jméno žáka. Vrať pouze samotný výsledný text:\n\n${rawText}`;
                 return await callGeminiLite([{ text: prompt }]);
             } catch (e) {
                 return localPedagogicalPolish(rawText);
@@ -735,7 +746,6 @@
             appToast('Vrácen původní text ↩️', 'info');
         }
 
-        // 1. ROVNOU ULOŽIT DO SLOŽKY I DO GOOGLE TABULKY
         function appSaveEntryDirect() {
             if (!activeStudentId) return;
             const b = document.getElementById('dictationInput');
@@ -761,7 +771,6 @@
             appToast('Zápis uložen do složky i do Google Tabulky ✓', 'success');
         }
 
-        // 2. PEDAGOGICKY UPRAVIT A ULOŽIT DO SLOŽKY I DO GOOGLE TABULKY
         async function appSaveEntryPolished() {
             if (!activeStudentId) return;
             const b = document.getElementById('dictationInput');
