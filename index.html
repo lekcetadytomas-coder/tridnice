@@ -66,16 +66,20 @@
 
     <main class="max-w-3xl mx-auto px-4 pt-5">
 
-        <!-- POHLED 1: SLOŽKY ŽÁKŮ SESKUPENÉ PODLE OBORŮ -->
+        <!-- POHLED 1: SLOŽKY ŽÁKŮ, KE ZKOPÍROVÁNÍ A KOŠ -->
         <div id="homeView" class="space-y-5">
             <div class="flex flex-wrap items-center justify-between gap-3">
-                <div class="inline-flex p-1 rounded-xl bg-slate-200/80 dark:bg-slate-900 border border-slate-300/60 dark:border-slate-800">
-                    <button id="tabFoldersBtn" type="button" onclick="appSwitchTab('folders')" class="px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold bg-white dark:bg-slate-800 text-indigo-700 dark:text-indigo-400 shadow-sm transition cursor-pointer">
+                <div class="inline-flex flex-wrap p-1 rounded-xl bg-slate-200/80 dark:bg-slate-900 border border-slate-300/60 dark:border-slate-800 gap-1">
+                    <button id="tabFoldersBtn" type="button" onclick="appSwitchTab('folders')" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold bg-white dark:bg-slate-800 text-indigo-700 dark:text-indigo-400 shadow-sm transition cursor-pointer">
                         📁 Složky žáků
                     </button>
-                    <button id="tabAllPendingBtn" type="button" onclick="appSwitchTab('pending')" class="px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 transition flex items-center gap-1.5 cursor-pointer">
+                    <button id="tabAllPendingBtn" type="button" onclick="appSwitchTab('pending')" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 transition flex items-center gap-1.5 cursor-pointer">
                         <span>Ke zkopírování</span>
                         <span id="globalPendingBadge" class="px-1.5 py-0.5 text-[11px] rounded-full bg-amber-500 text-white font-bold">0</span>
+                    </button>
+                    <button id="tabTrashBtn" type="button" onclick="appSwitchTab('trash')" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 transition flex items-center gap-1.5 cursor-pointer">
+                        <span>🗑️ Koš</span>
+                        <span id="globalTrashBadge" class="px-1.5 py-0.5 text-[11px] rounded-full bg-slate-400 dark:bg-slate-700 text-white font-bold">0</span>
                     </button>
                 </div>
 
@@ -84,13 +88,27 @@
                 </button>
             </div>
 
-            <!-- Kontejner pro seskupené sekce oborů -->
+            <!-- Sekce 1: Seskupené sekce oborů -->
             <div id="foldersSection" class="space-y-6">
                 <div id="studentsGroupedContainer" class="space-y-6"></div>
             </div>
 
+            <!-- Sekce 2: Všechny nezkopírované zápisy -->
             <div id="allPendingSection" class="hidden space-y-3">
                 <div id="allPendingList" class="space-y-3"></div>
+            </div>
+
+            <!-- Sekce 3: Koš (automatické smazání po 30 dnech) -->
+            <div id="trashSection" class="hidden space-y-4">
+                <div class="bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 rounded-2xl p-3.5 flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-xl">🗑️</span>
+                        <p class="text-xs sm:text-sm text-rose-900 dark:text-rose-200">
+                            Složky v koši se <strong>automaticky a trvale vymažou po 30 dnech</strong> od přesunutí. Do té doby je můžete kdykoliv obnovit.
+                        </p>
+                    </div>
+                </div>
+                <div id="trashList" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
             </div>
         </div>
 
@@ -115,7 +133,7 @@
                         <span>✏️</span>
                         <span class="hidden sm:inline">Upravit složku</span>
                     </button>
-                    <button type="button" onclick="appDeleteCurrentStudent()" title="Smazat složku" class="p-2 text-slate-400 hover:text-rose-600 rounded-xl transition cursor-pointer">
+                    <button type="button" onclick="appAskDeleteStudent(activeStudentId)" title="Přesunout složku do koše" class="p-2 text-slate-400 hover:text-rose-600 rounded-xl transition cursor-pointer">
                         🗑️
                     </button>
                 </div>
@@ -233,6 +251,34 @@
         </div>
     </main>
 
+    <!-- MODÁL: POTVRZENÍ PŘESUNU SLOŽKY DO KOŠE (30 DNÍ) -->
+    <div id="deleteConfirmModal" class="fixed inset-0 z-50 hidden bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+            <div class="flex items-start gap-3.5">
+                <div class="w-11 h-11 rounded-2xl bg-rose-100 dark:bg-rose-950/70 text-rose-600 dark:text-rose-400 flex items-center justify-center text-xl shrink-0">
+                    🗑️
+                </div>
+                <div class="space-y-1">
+                    <h3 class="font-bold text-base sm:text-lg text-slate-900 dark:text-slate-100">
+                        Opravdu chcete složku smazat?
+                    </h3>
+                    <p id="deleteConfirmStudentName" class="text-xs font-bold text-indigo-600 dark:text-indigo-400"></p>
+                    <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                        (složka se přesune do koše, kde se smaže po 30 dnech)
+                    </p>
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button type="button" onclick="appCloseDeleteConfirm()" class="px-4 py-2.5 rounded-xl text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 cursor-pointer">
+                    Ne, ponechat
+                </button>
+                <button type="button" onclick="appConfirmMoveToTrash()" class="px-5 py-2.5 rounded-xl text-sm font-semibold bg-rose-600 hover:bg-rose-700 text-white shadow-md cursor-pointer">
+                    Ano, přesunout do koše
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODÁL: PŘIDAT NEBO UPRAVIT SLOŽKU ŽÁKA / SKUPINY -->
     <div id="addStudentModal" class="fixed inset-0 z-50 hidden bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
@@ -309,8 +355,9 @@
         const API_KEY_STORAGE = 'izus_final_api_key';
         const SHEET_URL_STORAGE = 'izus_final_sheet_url';
         const FIXED_MODEL = 'gemini-3.5-flash-lite';
+        const TRASH_RETENTION_DAYS = 30;
+        const TRASH_RETENTION_MS = TRASH_RETENTION_DAYS * 24 * 60 * 60 * 1000;
 
-        // Definice oborů pro seskupování a filtrování
         const INSTRUMENT_GROUPS = [
             { key: 'klavír', title: 'Klavír', icon: '🎹', btnId: 'instBtn1' },
             { key: 'kytara', title: 'Kytara', icon: '🎸', btnId: 'instBtn2' },
@@ -324,14 +371,15 @@
         function getStore(k) { try { return localStorage.getItem(k); } catch(e) { return memStore[k] || null; } }
 
         let students = [
-            { id: 'st-1', name: 'Josef (klavír)', instrument: 'klavír', icon: '🎹' },
-            { id: 'st-2', name: 'Mia (klavír)', instrument: 'klavír', icon: '🎹' },
-            { id: 'st-3', name: 'Pavlína (kytara)', instrument: 'kytara', icon: '🎸' },
-            { id: 'st-4', name: 'Kristýnka (kytara)', instrument: 'kytara', icon: '🎸' }
+            { id: 'st-1', name: 'Josef (klavír)', instrument: 'klavír', icon: '🎹', deletedAt: null },
+            { id: 'st-2', name: 'Mia (klavír)', instrument: 'klavír', icon: '🎹', deletedAt: null },
+            { id: 'st-3', name: 'Pavlína (kytara)', instrument: 'kytara', icon: '🎸', deletedAt: null },
+            { id: 'st-4', name: 'Kristýnka (kytara)', instrument: 'kytara', icon: '🎸', deletedAt: null }
         ];
         let entries = [];
         let activeStudentId = null;
-        let editingStudentId = null; // null = vytváříme novou složku, jinak ID upravované složky
+        let editingStudentId = null;
+        let pendingDeleteStudentId = null; // ID složky čekající na potvrzení přesunu do koše
         let selectedInstrument = { name: 'klavír', icon: '🎹' };
         let currentPhotoAttached = false;
         let textBeforePolish = null;
@@ -344,10 +392,28 @@
                 if (s) students = JSON.parse(s);
                 if (e) entries = JSON.parse(e);
             } catch (err) {}
+            appPurgeExpiredTrash();
             appUpdateBadges();
             appRenderHome();
             appPullFromGoogleSheet(false);
         })();
+
+        // Automatické vymazání složek, které jsou v koši déle než 30 dní
+        function appPurgeExpiredTrash() {
+            const now = Date.now();
+            const expiredIds = students
+                .filter(st => st.deletedAt && (now - Number(st.deletedAt)) >= TRASH_RETENTION_MS)
+                .map(st => st.id);
+
+            if (expiredIds.length > 0) {
+                students = students.filter(st => !expiredIds.includes(st.id));
+                entries = entries.filter(en => !expiredIds.includes(en.studentId));
+                saveState();
+                expiredIds.forEach(id => {
+                    appPushToGoogleSheet({ action: 'deleteStudentPermanently', studentId: id });
+                });
+            }
+        }
 
         function appSetTodayDate() {
             const d = document.getElementById('lessonDate');
@@ -359,7 +425,6 @@
             setStore(ENTRIES_KEY, JSON.stringify(entries));
         }
 
-        // Řazení zápisů od nejnovějšího data hodiny po nejstarší
         function sortEntriesByDate(list) {
             return list.slice().sort((a, b) => {
                 const dA = String(a.date || '');
@@ -398,6 +463,7 @@
                 if (data && Array.isArray(data.entries)) {
                     entries = data.entries;
                 }
+                appPurgeExpiredTrash();
                 saveState();
                 appRenderHome();
                 if (activeStudentId) appRenderStudentDetail();
@@ -456,7 +522,6 @@
             }
         }
 
-        // Pomocná funkce pro očištění jména od automatické přípony oboru při editaci
         function stripInstrumentSuffix(fullName) {
             let clean = String(fullName || '').trim();
             INSTRUMENT_GROUPS.forEach(g => {
@@ -470,7 +535,6 @@
             return clean;
         }
 
-        // Otevření modálu pro PŘIDÁNÍ nové složky
         function appOpenAddStudent() {
             editingStudentId = null;
             document.getElementById('studentModalTitle').textContent = 'Nová složka žáka / skupiny';
@@ -481,7 +545,6 @@
             setTimeout(() => document.getElementById('newStudentNameInput').focus(), 50);
         }
 
-        // Otevření modálu pro ÚPRAVU existující složky (jméno i nástroj)
         function appOpenEditStudent(studentId, event) {
             if (event) event.stopPropagation();
             const st = students.find(s => s.id === studentId);
@@ -530,7 +593,6 @@
             const fullName = `${baseName} (${selectedInstrument.name})`;
 
             if (editingStudentId) {
-                // Upravujeme existující složku
                 const st = students.find(s => s.id === editingStudentId);
                 if (st) {
                     st.name = fullName;
@@ -547,8 +609,13 @@
                     appToast(`Složka upravena na „${fullName}“ ✓`, 'success');
                 }
             } else {
-                // Vytváříme novou složku
-                const newSt = { id: 'st-' + Date.now(), name: fullName, instrument: selectedInstrument.name, icon: selectedInstrument.icon };
+                const newSt = {
+                    id: 'st-' + Date.now(),
+                    name: fullName,
+                    instrument: selectedInstrument.name,
+                    icon: selectedInstrument.icon,
+                    deletedAt: null
+                };
                 students.push(newSt);
                 saveState();
                 appPushToGoogleSheet({ action: 'addStudent', student: newSt });
@@ -557,6 +624,62 @@
 
             appCloseAddStudent();
             appRenderHome();
+        }
+
+        // --- POTVRZENÍ A PŘESUN SLOŽKY DO KOŠE (30 DNÍ) ---
+        function appAskDeleteStudent(studentId, event) {
+            if (event) event.stopPropagation();
+            const st = students.find(s => s.id === studentId);
+            if (!st) return;
+
+            pendingDeleteStudentId = studentId;
+            document.getElementById('deleteConfirmStudentName').textContent = `${st.icon || '🎵'} ${st.name}`;
+            document.getElementById('deleteConfirmModal').classList.remove('hidden');
+        }
+
+        function appCloseDeleteConfirm() {
+            pendingDeleteStudentId = null;
+            document.getElementById('deleteConfirmModal').classList.add('hidden');
+        }
+
+        function appConfirmMoveToTrash() {
+            if (!pendingDeleteStudentId) return;
+            const st = students.find(s => s.id === pendingDeleteStudentId);
+            const idToTrash = pendingDeleteStudentId;
+            appCloseDeleteConfirm();
+
+            if (!st) return;
+            st.deletedAt = Date.now();
+            saveState();
+            appPushToGoogleSheet({ action: 'trashStudent', studentId: idToTrash, deletedAt: st.deletedAt });
+
+            if (activeStudentId === idToTrash) {
+                appCloseStudent();
+            } else {
+                appRenderHome();
+            }
+            appToast(`Složka „${st.name}“ přesunuta do koše (smaže se za 30 dní) 🗑️`, 'info');
+        }
+
+        function appRestoreFromTrash(studentId) {
+            const st = students.find(s => s.id === studentId);
+            if (!st) return;
+            st.deletedAt = null;
+            saveState();
+            appPushToGoogleSheet({ action: 'restoreStudent', studentId: studentId });
+            appRenderHome();
+            appToast(`Složka „${st.name}“ byla obnovena zpět mezi žáky ✓`, 'success');
+        }
+
+        function appDeletePermanently(studentId) {
+            const st = students.find(s => s.id === studentId);
+            const name = st ? st.name : 'Složka';
+            students = students.filter(s => s.id !== studentId);
+            entries = entries.filter(e => e.studentId !== studentId);
+            saveState();
+            appPushToGoogleSheet({ action: 'deleteStudentPermanently', studentId: studentId });
+            appRenderHome();
+            appToast(`Složka „${name}“ byla trvale vymazána.`, 'info');
         }
 
         function appOpenSettings() {
@@ -938,18 +1061,41 @@
         }
 
         function appSwitchTab(tab) {
+            const fSec = document.getElementById('foldersSection');
+            const pSec = document.getElementById('allPendingSection');
+            const tSec = document.getElementById('trashSection');
+
+            const fBtn = document.getElementById('tabFoldersBtn');
+            const pBtn = document.getElementById('tabAllPendingBtn');
+            const tBtn = document.getElementById('tabTrashBtn');
+
+            const activeCls = 'px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold bg-white dark:bg-slate-800 text-indigo-700 dark:text-indigo-400 shadow-sm transition flex items-center gap-1.5 cursor-pointer';
+            const inactiveCls = 'px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 transition flex items-center gap-1.5 cursor-pointer';
+
+            fSec.classList.add('hidden');
+            pSec.classList.add('hidden');
+            tSec.classList.add('hidden');
+
+            fBtn.className = inactiveCls;
+            pBtn.className = inactiveCls;
+            tBtn.className = inactiveCls;
+
             if (tab === 'folders') {
-                document.getElementById('foldersSection').classList.remove('hidden');
-                document.getElementById('allPendingSection').classList.add('hidden');
-            } else {
-                document.getElementById('foldersSection').classList.add('hidden');
-                document.getElementById('allPendingSection').classList.remove('hidden');
+                fSec.classList.remove('hidden');
+                fBtn.className = activeCls;
+            } else if (tab === 'pending') {
+                pSec.classList.remove('hidden');
+                pBtn.className = activeCls;
                 appRenderAllPending();
+            } else if (tab === 'trash') {
+                tSec.classList.remove('hidden');
+                tBtn.className = activeCls;
+                appRenderTrash();
             }
         }
 
         function appOpenStudent(id) {
-            const st = students.find(s => s.id === id);
+            const st = students.find(s => s.id === id && !s.deletedAt);
             if (!st) return;
             activeStudentId = id;
             document.getElementById('homeView').classList.add('hidden');
@@ -969,49 +1115,45 @@
             appRenderHome();
         }
 
-        function appDeleteCurrentStudent() {
-            if (!activeStudentId) return;
-            const idToDel = activeStudentId;
-            students = students.filter(s => s.id !== idToDel);
-            entries = entries.filter(e => e.studentId !== idToDel);
-            saveState();
-            appPushToGoogleSheet({ action: 'deleteStudent', studentId: idToDel });
-            appCloseStudent();
-        }
-
-        // --- VYKRESLENÍ SLOŽEK SESKUPENÝCH PODLE OBORŮ S ODDĚLOVACÍ ČAROU ---
+        // --- VYKRESLENÍ AKTIVNÍCH SLOŽEK SESKUPENÝCH PODLE OBORŮ ---
         function appRenderHome() {
+            appPurgeExpiredTrash();
+
+            const activeStudents = students.filter(st => !st.deletedAt);
+            const trashedStudents = students.filter(st => Boolean(st.deletedAt));
+            const activeStudentIds = new Set(activeStudents.map(s => s.id));
+
+            document.getElementById('globalPendingBadge').textContent = entries.filter(e => !e.copied && activeStudentIds.has(e.studentId)).length;
+            document.getElementById('globalTrashBadge').textContent = trashedStudents.length;
+
             const container = document.getElementById('studentsGroupedContainer');
-            document.getElementById('globalPendingBadge').textContent = entries.filter(e => !e.copied).length;
             container.innerHTML = '';
 
-            if (students.length === 0) {
-                container.innerHTML = '<p class="text-sm text-slate-500 text-center py-8">Zatím nemáte vytvořené žádné složky žáků.</p>';
+            if (activeStudents.length === 0) {
+                container.innerHTML = '<p class="text-sm text-slate-500 text-center py-8">Zatím nemáte žádné aktivní složky žáků.</p>';
                 appRenderAllPending();
+                appRenderTrash();
                 return;
             }
 
-            // Rozdělíme žáky do skupin podle oboru
             const renderedIds = new Set();
             const groupsToRender = [];
 
             INSTRUMENT_GROUPS.forEach(group => {
-                const groupStudents = students.filter(st => (st.instrument || '').toLowerCase() === group.key);
+                const groupStudents = activeStudents.filter(st => (st.instrument || '').toLowerCase() === group.key);
                 if (groupStudents.length > 0) {
                     groupStudents.forEach(s => renderedIds.add(s.id));
                     groupsToRender.push({ title: group.title, icon: group.icon, items: groupStudents });
                 }
             });
 
-            // Případní žáci s jiným/vlastním oborem
-            const otherStudents = students.filter(st => !renderedIds.has(st.id));
+            const otherStudents = activeStudents.filter(st => !renderedIds.has(st.id));
             if (otherStudents.length > 0) {
                 groupsToRender.push({ title: 'Ostatní obory', icon: '🎵', items: otherStudents });
             }
 
             groupsToRender.forEach((grp, idx) => {
                 const section = document.createElement('div');
-                // Oddělovací čára mezi jednotlivými obory
                 section.className = idx > 0
                     ? 'pt-6 border-t-2 border-slate-200 dark:border-slate-800 space-y-3'
                     : 'space-y-3';
@@ -1047,17 +1189,21 @@
                                 </p>
                             </div>
                         </div>
-                        <div class="flex items-center gap-1.5 shrink-0">
+                        <div class="flex items-center gap-1 shrink-0">
                             <span class="px-2.5 py-1 rounded-full text-xs font-bold ${pending > 0 ? 'bg-amber-100 text-amber-800' : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'}">
                                 ${pending > 0 ? pending + ' ke zkop.' : 'Hotovo ✓'}
                             </span>
                             <button type="button" class="edit-folder-btn p-2 rounded-xl text-slate-400 hover:text-indigo-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer" title="Upravit jméno nebo obor složky">
                                 ✏️
                             </button>
+                            <button type="button" class="trash-folder-btn p-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer" title="Přesunout složku do koše">
+                                🗑️
+                            </button>
                         </div>
                     `;
 
                     card.querySelector('.edit-folder-btn').onclick = (ev) => appOpenEditStudent(st.id, ev);
+                    card.querySelector('.trash-folder-btn').onclick = (ev) => appAskDeleteStudent(st.id, ev);
                     grid.appendChild(card);
                 });
 
@@ -1065,15 +1211,72 @@
             });
 
             appRenderAllPending();
+            appRenderTrash();
         }
 
         function appRenderAllPending() {
             const c = document.getElementById('allPendingList');
-            const pending = sortEntriesByDate(entries.filter(e => !e.copied));
+            const activeStudentIds = new Set(students.filter(s => !s.deletedAt).map(s => s.id));
+            const pending = sortEntriesByDate(entries.filter(e => !e.copied && activeStudentIds.has(e.studentId)));
             c.innerHTML = pending.length === 0 ? '<p class="text-sm text-slate-500 text-center py-8">Vše zkopírováno!</p>' : '';
             pending.forEach(entry => {
                 const st = students.find(s => s.id === entry.studentId);
                 c.appendChild(buildEntryCard(entry, st ? `${st.icon} ${st.name}` : 'Žák'));
+            });
+        }
+
+        // --- VYKRESLENÍ KOŠE S ODPOČTEM 30 DNÍ ---
+        function appRenderTrash() {
+            const trashContainer = document.getElementById('trashList');
+            if (!trashContainer) return;
+
+            const trashed = students.filter(st => Boolean(st.deletedAt));
+            trashContainer.innerHTML = '';
+
+            if (trashed.length === 0) {
+                trashContainer.innerHTML = `
+                    <div class="col-span-full text-center py-10 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-300 dark:border-slate-800">
+                        <p class="text-sm text-slate-500">Koš je prázdný.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const now = Date.now();
+            trashed.forEach(st => {
+                const elapsedMs = now - Number(st.deletedAt);
+                const remainingDays = Math.max(1, Math.ceil((TRASH_RETENTION_MS - elapsedMs) / (24 * 60 * 60 * 1000)));
+                const stEntriesCount = entries.filter(e => e.studentId === st.id).length;
+
+                const card = document.createElement('div');
+                card.className = 'bg-white dark:bg-slate-900 p-4 rounded-2xl border border-rose-200 dark:border-rose-900/50 shadow-sm flex flex-col justify-between gap-3';
+                card.innerHTML = `
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-11 h-11 rounded-2xl bg-rose-50 dark:bg-rose-950/50 flex items-center justify-center text-2xl shrink-0 opacity-75">
+                                ${st.icon || '🎵'}
+                            </div>
+                            <div class="min-w-0">
+                                <h3 class="font-bold text-base truncate line-through text-slate-600 dark:text-slate-300">${escapeHtml(st.name)}</h3>
+                                <p class="text-xs text-rose-600 dark:text-rose-400 font-semibold">
+                                    ⏳ Smaže se za ${remainingDays} ${remainingDays === 1 ? 'den' : (remainingDays < 5 ? 'dny' : 'dní')} (${stEntriesCount} zápisů)
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                        <button type="button" class="restore-btn px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition cursor-pointer">
+                            ↩️ Obnovit složku
+                        </button>
+                        <button type="button" class="perm-del-btn px-3 py-2 rounded-xl text-xs font-semibold bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 hover:bg-rose-200 transition cursor-pointer">
+                            Smazat hned
+                        </button>
+                    </div>
+                `;
+
+                card.querySelector('.restore-btn').onclick = () => appRestoreFromTrash(st.id);
+                card.querySelector('.perm-del-btn').onclick = () => appDeletePermanently(st.id);
+                trashContainer.appendChild(card);
             });
         }
 
@@ -1094,7 +1297,6 @@
             copied.forEach(e => cList.appendChild(buildEntryCard(e, null)));
         }
 
-        // Karta zápisu s možností KDYKOLIV ZMĚNIT DATUM PŘIDÁNÍ
         function buildEntryCard(entry, studentLabel) {
             const div = document.createElement('div');
             div.className = 'p-4 rounded-2xl border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm space-y-2.5';
@@ -1120,7 +1322,6 @@
                 </div>
             `;
 
-            // Změna data u existujícího zápisu + okamžité přeřazení
             const dateInput = div.querySelector('.entry-date-input');
             dateInput.onchange = function() {
                 if (!this.value) return;
