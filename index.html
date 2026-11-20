@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="iZUŠ Třídnice">
-    <title>iZUŠ Třídnice & AI Zapisovač</title>
+    <title>iZUŠ Třídnice • Kožený diář</title>
     <script>
         const origWarn = console.warn;
         console.warn = function(...args) {
@@ -16,46 +16,72 @@
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,600;0,700;1,500&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             darkMode: 'class',
-            theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] } } }
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Lora', 'Georgia', 'serif']
+                    }
+                }
+            }
         }
     </script>
     <style>
-        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* Jemný efekt koženého prošívání pod hlavičkou */
+        .leather-stitch {
+            background-image: linear-gradient(to right, rgba(217, 160, 91, 0.4) 50%, transparent 50%);
+            background-size: 12px 2px;
+            background-repeat: repeat-x;
+            background-position: bottom;
+        }
+        /* Jemná textura teplého papíru / kůže */
+        .diary-shadow {
+            box-shadow: 0 4px 20px -2px rgba(45, 25, 12, 0.08), 0 1px 3px rgba(45, 25, 12, 0.05);
+        }
+        .dark .diary-shadow {
+            box-shadow: 0 6px 24px -4px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 235, 210, 0.04);
+        }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100 min-h-screen transition-colors duration-200 pb-24">
+<body class="bg-[#f5efe6] text-[#2e2017] dark:bg-[#17120e] dark:text-[#efe6da] min-h-screen transition-colors duration-300 pb-24">
 
-    <!-- Horní lišta -->
-    <header class="sticky top-0 z-30 bg-indigo-700 dark:bg-slate-900 text-white border-b border-indigo-800 dark:border-slate-800 shadow-md">
+    <!-- Horní lišta – kožený hřbet diáře s prošíváním -->
+    <header class="sticky top-0 z-30 bg-[#4a2e1f] dark:bg-[#231812] text-[#faf3e8] border-b border-[#3a2216] dark:border-[#36261d] shadow-lg leather-stitch">
         <div class="max-w-3xl mx-auto px-4 py-3.5 flex items-center justify-between">
             <div class="flex items-center gap-3 cursor-pointer" onclick="appCloseStudent()">
-                <div class="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center shadow-inner">
-                    <span class="text-xl">🎵</span>
+                <div class="w-10 h-10 rounded-xl bg-[#66412d] dark:bg-[#35251c] border border-[#d4a373]/30 flex items-center justify-center shadow-inner">
+                    <span class="text-xl">📓</span>
                 </div>
                 <div>
-                    <h1 class="font-bold text-lg leading-tight tracking-tight">iZUŠ Třídnice</h1>
-                    <p id="activeModelSub" class="text-xs text-indigo-200 dark:text-slate-400">Model: gemini-3.5-flash-lite</p>
+                    <h1 class="font-serif font-bold text-lg sm:text-xl leading-tight tracking-wide text-[#fdf8f0]">iZUŠ Třídnice</h1>
+                    <p id="activeModelSub" class="text-[11px] text-[#d9bfa9] dark:text-[#b09884]">Model: gemini-3.5-flash-lite</p>
                 </div>
             </div>
 
             <div class="flex items-center gap-1.5 sm:gap-2">
                 <!-- Indikátor a tlačítko synchronizace s Google Tabulkou -->
-                <button id="syncSheetBtn" type="button" onclick="appPullFromGoogleSheet(true)" title="Načíst nejnovější data z Google Tabulky" class="px-2.5 py-1.5 rounded-xl bg-indigo-800/80 hover:bg-indigo-800 text-xs font-medium text-indigo-100 flex items-center gap-1.5 transition cursor-pointer">
+                <button id="syncSheetBtn" type="button" onclick="appPullFromGoogleSheet(true)" title="Načíst nejnovější data z Google Tabulky" class="px-2.5 py-1.5 rounded-xl bg-[#3a2317]/90 dark:bg-[#18100c] hover:bg-[#5c3a27] text-xs font-medium text-[#ebd8c3] border border-[#d4a373]/20 flex items-center gap-1.5 transition cursor-pointer">
                     <span id="syncDot" class="w-2 h-2 rounded-full bg-amber-400"></span>
                     <span id="syncLabel" class="hidden sm:inline">Lokální režim</span>
                 </button>
 
                 <!-- Tlačítko Nastavení (AI Klíč + URL Tabulky) -->
-                <button id="openSettingsBtn" type="button" onclick="appOpenSettings()" class="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-500 text-xs font-bold text-slate-950 flex items-center gap-1.5 transition cursor-pointer shadow-sm">
+                <button id="openSettingsBtn" type="button" onclick="appOpenSettings()" class="px-3 py-1.5 rounded-xl bg-[#c98a4b] hover:bg-[#b8793b] text-xs font-bold text-[#1f130c] flex items-center gap-1.5 transition cursor-pointer shadow-sm">
                     <span>⚙️</span>
                     <span id="settingsStatusText">Nastavení</span>
                 </button>
 
-                <button type="button" onclick="appToggleTheme()" class="p-2 rounded-xl bg-indigo-800/80 dark:bg-slate-800 text-indigo-100 hover:bg-indigo-800 transition cursor-pointer">
+                <button type="button" onclick="appToggleTheme()" title="Přepnout tmavou / světlou kůži" class="p-2 rounded-xl bg-[#3a2317]/90 dark:bg-[#18100c] text-[#ebd8c3] hover:bg-[#5c3a27] border border-[#d4a373]/20 transition cursor-pointer">
                     🌓
                 </button>
             </div>
@@ -64,26 +90,26 @@
 
     <div id="toastContainer" class="fixed bottom-5 right-5 left-5 sm:left-auto z-50 flex flex-col gap-2 pointer-events-none"></div>
 
-    <main class="max-w-3xl mx-auto px-4 pt-5">
+    <main class="max-w-3xl mx-auto px-4 pt-6">
 
         <!-- POHLED 1: SLOŽKY ŽÁKŮ, KE ZKOPÍROVÁNÍ A KOŠ -->
-        <div id="homeView" class="space-y-5">
+        <div id="homeView" class="space-y-6">
             <div class="flex flex-wrap items-center justify-between gap-3">
-                <div class="inline-flex flex-wrap p-1 rounded-xl bg-slate-200/80 dark:bg-slate-900 border border-slate-300/60 dark:border-slate-800 gap-1">
-                    <button id="tabFoldersBtn" type="button" onclick="appSwitchTab('folders')" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold bg-white dark:bg-slate-800 text-indigo-700 dark:text-indigo-400 shadow-sm transition cursor-pointer">
+                <div class="inline-flex flex-wrap p-1 rounded-xl bg-[#e9dfd1] dark:bg-[#231b16] border border-[#d8cab8] dark:border-[#382b22] gap-1">
+                    <button id="tabFoldersBtn" type="button" onclick="appSwitchTab('folders')" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold bg-[#fffcf7] dark:bg-[#352820] text-[#7c3f1c] dark:text-[#e6b17a] shadow-sm transition cursor-pointer">
                         📁 Složky žáků
                     </button>
-                    <button id="tabAllPendingBtn" type="button" onclick="appSwitchTab('pending')" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 transition flex items-center gap-1.5 cursor-pointer">
+                    <button id="tabAllPendingBtn" type="button" onclick="appSwitchTab('pending')" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold text-[#6e5645] dark:text-[#a89280] hover:text-[#2e2017] dark:hover:text-[#efe6da] transition flex items-center gap-1.5 cursor-pointer">
                         <span>Ke zkopírování</span>
-                        <span id="globalPendingBadge" class="px-1.5 py-0.5 text-[11px] rounded-full bg-amber-500 text-white font-bold">0</span>
+                        <span id="globalPendingBadge" class="px-1.5 py-0.5 text-[11px] rounded-full bg-[#b86b27] text-white font-bold">0</span>
                     </button>
-                    <button id="tabTrashBtn" type="button" onclick="appSwitchTab('trash')" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 transition flex items-center gap-1.5 cursor-pointer">
+                    <button id="tabTrashBtn" type="button" onclick="appSwitchTab('trash')" class="px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold text-[#6e5645] dark:text-[#a89280] hover:text-[#2e2017] dark:hover:text-[#efe6da] transition flex items-center gap-1.5 cursor-pointer">
                         <span>🗑️ Koš</span>
-                        <span id="globalTrashBadge" class="px-1.5 py-0.5 text-[11px] rounded-full bg-slate-400 dark:bg-slate-700 text-white font-bold">0</span>
+                        <span id="globalTrashBadge" class="px-1.5 py-0.5 text-[11px] rounded-full bg-[#9c8675] dark:bg-[#4a392e] text-white font-bold">0</span>
                     </button>
                 </div>
 
-                <button type="button" onclick="appOpenAddStudent()" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-md flex items-center gap-2 transition cursor-pointer">
+                <button type="button" onclick="appOpenAddStudent()" class="px-4 py-2.5 rounded-xl bg-[#8c4a27] hover:bg-[#753c1e] dark:bg-[#a65d32] dark:hover:bg-[#8f4e28] text-[#fdf8f0] font-semibold text-sm shadow-md flex items-center gap-2 transition cursor-pointer border border-[#d4a373]/25">
                     <span>+ Přidat složku / žáka</span>
                 </button>
             </div>
@@ -100,10 +126,10 @@
 
             <!-- Sekce 3: Koš (automatické smazání po 30 dnech) -->
             <div id="trashSection" class="hidden space-y-4">
-                <div class="bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 rounded-2xl p-3.5 flex items-center justify-between gap-3">
+                <div class="bg-[#f9ebe6] dark:bg-[#2b1a16] border border-[#e3bfb4] dark:border-[#522f26] rounded-2xl p-3.5 flex items-center justify-between gap-3">
                     <div class="flex items-center gap-2.5">
                         <span class="text-xl">🗑️</span>
-                        <p class="text-xs sm:text-sm text-rose-900 dark:text-rose-200">
+                        <p class="text-xs sm:text-sm text-[#702e21] dark:text-[#e8b4a6]">
                             Složky v koši se <strong>automaticky a trvale vymažou po 30 dnech</strong> od přesunutí. Do té doby je můžete kdykoliv obnovit.
                         </p>
                     </div>
@@ -114,86 +140,89 @@
 
         <!-- POHLED 2: DETAIL ŽÁKA / SKUPINY -->
         <div id="studentDetailView" class="hidden space-y-5">
-            <div class="flex items-center justify-between bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+            <div class="flex items-center justify-between bg-[#fffcf7] dark:bg-[#231b16] p-4 rounded-2xl diary-shadow border border-[#e2d5c3] dark:border-[#3a2c23]">
                 <div class="flex items-center gap-3 min-w-0">
-                    <button type="button" onclick="appCloseStudent()" class="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 transition text-sm font-semibold cursor-pointer shrink-0">
+                    <button type="button" onclick="appCloseStudent()" class="px-3 py-2 rounded-xl bg-[#efe6d8] dark:bg-[#32261f] hover:bg-[#e3d5c1] dark:hover:bg-[#3f3027] text-[#4a3222] dark:text-[#e8d9c8] transition text-sm font-semibold cursor-pointer shrink-0">
                         ← Složky
                     </button>
                     <div class="min-w-0">
                         <div class="flex items-center gap-2">
                             <span id="detailStudentIcon" class="text-xl shrink-0">🎹</span>
-                            <h2 id="detailStudentName" class="font-bold text-lg sm:text-xl truncate">Žák</h2>
+                            <h2 id="detailStudentName" class="font-serif font-bold text-lg sm:text-xl truncate text-[#2e1e14] dark:text-[#f7efe4]">Žák</h2>
                         </div>
-                        <p id="detailStudentSub" class="text-xs text-slate-500 dark:text-slate-400">Složka žáka</p>
+                        <p id="detailStudentSub" class="text-xs text-[#7d6552] dark:text-[#a89280]">Složka žáka</p>
                     </div>
                 </div>
 
                 <div class="flex items-center gap-1.5 shrink-0">
-                    <button type="button" onclick="appOpenEditCurrentStudent()" title="Upravit jméno nebo obor složky" class="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 text-slate-700 dark:text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer">
+                    <button type="button" onclick="appOpenEditCurrentStudent()" title="Upravit jméno nebo obor složky" class="px-3 py-2 rounded-xl bg-[#efe6d8] dark:bg-[#32261f] hover:bg-[#e3d5c1] dark:hover:bg-[#3f3027] text-[#4a3222] dark:text-[#e8d9c8] text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer">
                         <span>✏️</span>
                         <span class="hidden sm:inline">Upravit složku</span>
                     </button>
-                    <button type="button" onclick="appAskDeleteStudent(activeStudentId)" title="Přesunout složku do koše" class="p-2 text-slate-400 hover:text-rose-600 rounded-xl transition cursor-pointer">
+                    <button type="button" onclick="appAskDeleteStudent(activeStudentId)" title="Přesunout složku do koše" class="p-2 text-[#9c8675] hover:text-[#b8432e] rounded-xl transition cursor-pointer">
                         🗑️
                     </button>
                 </div>
             </div>
 
-            <section class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-4 sm:p-5 space-y-4">
+            <!-- Karta diáře pro nový zápis -->
+            <section class="bg-[#fffcf7] dark:bg-[#231b16] rounded-2xl diary-shadow border border-[#e2d5c3] dark:border-[#3a2c23] p-4 sm:p-5 space-y-4">
                 <div class="flex flex-wrap items-center justify-between gap-2">
-                    <h3 class="font-bold text-sm sm:text-base flex items-center gap-2">
-                        <span class="w-2.5 h-2.5 rounded-full bg-indigo-600"></span>
+                    <h3 class="font-serif font-bold text-base flex items-center gap-2 text-[#3b2518] dark:text-[#f5ebd9]">
+                        <span class="w-2.5 h-2.5 rounded-full bg-[#b86b27]"></span>
                         Nový zápis z výuky
                     </h3>
-                    <div class="flex items-center gap-2 bg-indigo-50/70 dark:bg-slate-800/90 px-3 py-1.5 rounded-xl border border-indigo-200/70 dark:border-slate-700">
-                        <label for="lessonDate" class="text-xs font-semibold text-indigo-900 dark:text-indigo-300">📅 Datum hodiny:</label>
-                        <input type="date" id="lessonDate" class="px-2 py-0.5 text-xs sm:text-sm font-semibold rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 cursor-pointer">
-                        <button type="button" onclick="appSetTodayDate()" class="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer">Dnes</button>
+                    <div class="flex items-center gap-2 bg-[#f5ede0] dark:bg-[#1a1410] px-3 py-1.5 rounded-xl border border-[#dfd0bc] dark:border-[#3a2c23]">
+                        <label for="lessonDate" class="text-xs font-semibold text-[#6e472b] dark:text-[#d4a373]">📅 Datum:</label>
+                        <input type="date" id="lessonDate" class="px-2 py-0.5 text-xs sm:text-sm font-semibold rounded-lg border border-[#d6c5b0] dark:border-[#4a382c] bg-[#fffdf9] dark:bg-[#2a201a] text-[#2e2017] dark:text-[#efe6da] cursor-pointer">
+                        <button type="button" onclick="appSetTodayDate()" class="text-[11px] font-semibold text-[#8c4a27] dark:text-[#e0a263] hover:underline cursor-pointer">Dnes</button>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
-                    <button type="button" onclick="appStartDictation()" class="flex flex-col items-center justify-center gap-1.5 p-3.5 rounded-2xl border-2 border-indigo-100 dark:border-indigo-900/50 bg-indigo-50/70 dark:bg-indigo-950/30 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 transition cursor-pointer">
-                        <div id="micIconCircle" class="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow-sm">🎤</div>
+                    <!-- Hlasový diktát (teplá koňaková) -->
+                    <button type="button" onclick="appStartDictation()" class="flex flex-col items-center justify-center gap-1.5 p-3.5 rounded-2xl border border-[#e0cbb5] dark:border-[#473427] bg-[#f7ede0] dark:bg-[#2c2019] hover:bg-[#efe0cc] dark:hover:bg-[#382920] text-[#6b391a] dark:text-[#e6b88a] transition cursor-pointer">
+                        <div id="micIconCircle" class="w-10 h-10 rounded-full bg-[#8c4a27] dark:bg-[#a65d32] text-[#fdf8f0] flex items-center justify-center shadow-sm">🎤</div>
                         <span id="micBtnLabel" class="text-xs sm:text-sm font-semibold">Nadiktovat hlasem</span>
-                        <span class="text-[11px] text-slate-500 text-center">Mikrofon / Win+H</span>
+                        <span class="text-[11px] text-[#856b57] dark:text-[#a89280] text-center">Mikrofon / Win+H</span>
                     </button>
 
-                    <label for="photoInput" class="cursor-pointer flex flex-col items-center justify-center gap-1.5 p-3.5 rounded-2xl border-2 border-emerald-100 dark:border-emerald-900/50 bg-emerald-50/70 dark:bg-emerald-950/30 hover:bg-emerald-100 text-emerald-800 dark:text-emerald-300 transition">
-                        <div class="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-sm">📷</div>
+                    <!-- Vyfocení deníku (teplá šalvějová / lesní zelená) -->
+                    <label for="photoInput" class="cursor-pointer flex flex-col items-center justify-center gap-1.5 p-3.5 rounded-2xl border border-[#c8d6c4] dark:border-[#2e3d30] bg-[#eef3ec] dark:bg-[#1e261f] hover:bg-[#e2ebe0] dark:hover:bg-[#263228] text-[#2d4a32] dark:text-[#a8cca9] transition">
+                        <div class="w-10 h-10 rounded-full bg-[#446b4b] dark:bg-[#4e7a56] text-[#fdf8f0] flex items-center justify-center shadow-sm">📷</div>
                         <span class="text-xs sm:text-sm font-semibold text-center">Vyfotit / nahrát deník</span>
-                        <span class="text-[11px] text-slate-500 text-center">JPG, PNG i HEIC</span>
+                        <span class="text-[11px] text-[#5e7562] dark:text-[#8fa892] text-center">JPG, PNG i HEIC</span>
                         <input id="photoInput" type="file" accept="image/*,.heic,.heif" class="hidden" onchange="appHandlePhoto(this)">
                     </label>
                 </div>
 
                 <!-- ŽIVÝ STAVOVÝ BOX PŘI ČTENÍ FOTKY -->
-                <div id="photoPreviewBox" class="hidden p-3.5 rounded-2xl bg-emerald-50 dark:bg-slate-800 border border-emerald-300 dark:border-slate-700 flex items-center justify-between gap-3">
+                <div id="photoPreviewBox" class="hidden p-3.5 rounded-2xl bg-[#eef3ec] dark:bg-[#1e261f] border border-[#b8ccb3] dark:border-[#344737] flex items-center justify-between gap-3">
                     <div class="flex items-center gap-3">
-                        <img id="photoThumb" src="" class="w-12 h-12 rounded-xl object-cover border border-slate-300 hidden">
-                        <div id="photoSpinnerBox" class="w-12 h-12 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-lg shrink-0">⏳</div>
+                        <img id="photoThumb" src="" class="w-12 h-12 rounded-xl object-cover border border-[#c4b49f] hidden">
+                        <div id="photoSpinnerBox" class="w-12 h-12 rounded-xl bg-[#446b4b] text-white flex items-center justify-center font-bold text-lg shrink-0">⏳</div>
                         <div>
-                            <span id="photoStatusTitle" class="text-xs sm:text-sm font-bold text-emerald-900 dark:text-emerald-300 block">Zpracovávám...</span>
-                            <p id="photoStatusSub" class="text-xs text-slate-600 dark:text-slate-400">Prosím vyčkejte...</p>
+                            <span id="photoStatusTitle" class="text-xs sm:text-sm font-bold text-[#27402b] dark:text-[#b5d6b7] block">Zpracovávám...</span>
+                            <p id="photoStatusSub" class="text-xs text-[#546b58] dark:text-[#8fa892]">Prosím vyčkejte...</p>
                         </div>
                     </div>
-                    <button type="button" onclick="appClearPhoto()" class="p-2 text-xs font-semibold text-rose-600 hover:bg-rose-100 rounded-xl cursor-pointer">✕</button>
+                    <button type="button" onclick="appClearPhoto()" class="p-2 text-xs font-semibold text-[#b8432e] hover:bg-[#f2dcd8] rounded-xl cursor-pointer">✕</button>
                 </div>
 
-                <!-- TEXTOVÉ POLE + TLAČÍTKO PŘEFORMULOVAT + TLAČÍTKO ZPĚT -->
+                <!-- TEXTOVÉ POLE (List diáře) -->
                 <div class="space-y-1.5">
                     <div class="flex flex-wrap items-center justify-between gap-2 px-1">
-                        <label for="dictationInput" class="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                        <label for="dictationInput" class="text-xs font-semibold text-[#6e5645] dark:text-[#b8a290]">
                             Text látky (můžete uložit rovnou, nebo nechat pedagogicky učesat):
                         </label>
                         <div class="flex flex-wrap items-center gap-3">
-                            <button id="undoPolishBtn" type="button" onclick="appUndoPolish()" class="hidden text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 hover:bg-amber-200 transition cursor-pointer">
+                            <button id="undoPolishBtn" type="button" onclick="appUndoPolish()" class="hidden text-xs font-bold px-2.5 py-1 rounded-lg bg-[#f5e1c3] dark:bg-[#473219] text-[#7a4612] dark:text-[#f0c086] hover:bg-[#ebd0a7] transition cursor-pointer">
                                 ↩️ Vrátit původní text
                             </button>
-                            <button id="polishInPlaceBtn" type="button" onclick="appPolishInPlace()" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer">
+                            <button id="polishInPlaceBtn" type="button" onclick="appPolishInPlace()" class="text-xs font-semibold text-[#8c4a27] dark:text-[#e0a263] hover:underline cursor-pointer">
                                 ✨ Pedagogicky upravit v okně
                             </button>
-                            <button type="button" onclick="appClearText()" class="text-xs text-slate-400 hover:text-rose-500 cursor-pointer">
+                            <button type="button" onclick="appClearText()" class="text-xs text-[#9c8675] hover:text-[#b8432e] cursor-pointer">
                                 Vymazat
                             </button>
                         </div>
@@ -203,16 +232,16 @@
                         rows="6" 
                         oninput="appAutoResize(this)"
                         placeholder="Sem se automaticky vypíše text přečtený z fotky deníku nebo váš diktát (např. stupnice C dur, Bach Andante, práce s dynamikou)..."
-                        class="w-full min-h-[180px] p-4 text-base leading-relaxed rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition resize-y"
+                        class="w-full min-h-[180px] p-4 text-base leading-relaxed rounded-2xl border border-[#dfd1be] dark:border-[#3f3026] bg-[#faf5ec] dark:bg-[#1a1410] focus:bg-[#fffdf9] dark:focus:bg-[#1f1813] focus:ring-2 focus:ring-[#b86b27] focus:outline-none transition resize-y placeholder:text-[#a69280] dark:placeholder:text-[#6e5b4d]"
                     ></textarea>
                 </div>
 
-                <!-- DVĚ TLAČÍTKA PRO ULOŽENÍ: ROVNOU ULOŽIT vs. PEDAGOGICKY UPRAVIT A ULOŽIT -->
+                <!-- DVĚ TLAČÍTKA PRO ULOŽENÍ -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                     <button 
                         type="button" 
                         onclick="appSaveEntryDirect()" 
-                        class="w-full py-3.5 px-4 rounded-xl text-sm font-semibold text-slate-800 dark:text-slate-100 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 transition flex items-center justify-center gap-2 cursor-pointer"
+                        class="w-full py-3.5 px-4 rounded-xl text-sm font-semibold text-[#4a3222] dark:text-[#ebdccc] bg-[#efe5d7] hover:bg-[#e5d6c1] dark:bg-[#332720] dark:hover:bg-[#403128] border border-[#d8c7b2] dark:border-[#4a392e] transition flex items-center justify-center gap-2 cursor-pointer"
                     >
                         <span>💾 Rovnou uložit do složky</span>
                     </button>
@@ -221,7 +250,7 @@
                         id="savePolishedBtn"
                         type="button" 
                         onclick="appSaveEntryPolished()" 
-                        class="w-full py-3.5 px-4 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 shadow-md transition flex items-center justify-center gap-2 cursor-pointer"
+                        class="w-full py-3.5 px-4 rounded-xl text-sm font-semibold text-[#fdf8f0] bg-[#8c4a27] hover:bg-[#753c1e] dark:bg-[#a65d32] dark:hover:bg-[#8f4e28] shadow-md transition flex items-center justify-center gap-2 cursor-pointer border border-[#d4a373]/25"
                     >
                         <span id="savePolishedBtnText">✨ Pedagogicky upravit a uložit</span>
                     </button>
@@ -230,49 +259,49 @@
 
             <section class="space-y-3">
                 <div class="flex items-center justify-between px-1">
-                    <h3 class="font-bold text-base flex items-center gap-2">
+                    <h3 class="font-serif font-bold text-base flex items-center gap-2">
                         <span>Nezkopírované zápisy do iZUŠ</span>
-                        <span id="studentPendingCount" class="px-2 py-0.5 text-xs rounded-full bg-amber-500 text-white font-bold">0</span>
+                        <span id="studentPendingCount" class="px-2 py-0.5 text-xs rounded-full bg-[#b86b27] text-white font-bold font-sans">0</span>
                     </h3>
-                    <span class="text-xs text-slate-400">Řazeno podle data • kliknutím na datum ho změníte</span>
+                    <span class="text-xs text-[#8f7866] dark:text-[#8c7868]">Kliknutím na datum ho změníte</span>
                 </div>
                 <div id="studentPendingList" class="space-y-3"></div>
             </section>
 
             <section class="pt-2">
-                <details class="group bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-                    <summary class="cursor-pointer p-4 font-semibold text-sm text-slate-600 dark:text-slate-400 flex items-center justify-between select-none">
+                <details class="group bg-[#fffcf7] dark:bg-[#231b16] rounded-2xl border border-[#e2d5c3] dark:border-[#3a2c23] overflow-hidden">
+                    <summary class="cursor-pointer p-4 font-semibold text-sm text-[#6e5645] dark:text-[#b09884] flex items-center justify-between select-none">
                         <span>Historie již zapsaných hodin v iZUŠ (<span id="studentCopiedCount">0</span>)</span>
                         <span class="text-xs group-open:rotate-180 transition-transform">▼</span>
                     </summary>
-                    <div id="studentCopiedList" class="p-4 pt-0 space-y-3 border-t border-slate-100 dark:border-slate-800/60"></div>
+                    <div id="studentCopiedList" class="p-4 pt-0 space-y-3 border-t border-[#ede3d4] dark:border-[#332720]"></div>
                 </details>
             </section>
         </div>
     </main>
 
     <!-- MODÁL: POTVRZENÍ PŘESUNU SLOŽKY DO KOŠE (30 DNÍ) -->
-    <div id="deleteConfirmModal" class="fixed inset-0 z-50 hidden bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+    <div id="deleteConfirmModal" class="fixed inset-0 z-50 hidden bg-[#120c08]/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-[#fffcf7] dark:bg-[#241c16] rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-[#e0d2be] dark:border-[#423227] space-y-4">
             <div class="flex items-start gap-3.5">
-                <div class="w-11 h-11 rounded-2xl bg-rose-100 dark:bg-rose-950/70 text-rose-600 dark:text-rose-400 flex items-center justify-center text-xl shrink-0">
+                <div class="w-11 h-11 rounded-2xl bg-[#f7e3de] dark:bg-[#3d211b] text-[#b8432e] dark:text-[#e88a78] flex items-center justify-center text-xl shrink-0">
                     🗑️
                 </div>
                 <div class="space-y-1">
-                    <h3 class="font-bold text-base sm:text-lg text-slate-900 dark:text-slate-100">
+                    <h3 class="font-serif font-bold text-base sm:text-lg text-[#2e2017] dark:text-[#f5ebd9]">
                         Opravdu chcete složku smazat?
                     </h3>
-                    <p id="deleteConfirmStudentName" class="text-xs font-bold text-indigo-600 dark:text-indigo-400"></p>
-                    <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                    <p id="deleteConfirmStudentName" class="text-xs font-bold text-[#8c4a27] dark:text-[#e0a263]"></p>
+                    <p class="text-xs sm:text-sm text-[#6e5645] dark:text-[#b8a290] leading-relaxed">
                         (složka se přesune do koše, kde se smaže po 30 dnech)
                     </p>
                 </div>
             </div>
             <div class="flex justify-end gap-2 pt-2">
-                <button type="button" onclick="appCloseDeleteConfirm()" class="px-4 py-2.5 rounded-xl text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 cursor-pointer">
+                <button type="button" onclick="appCloseDeleteConfirm()" class="px-4 py-2.5 rounded-xl text-sm font-medium bg-[#efe5d7] dark:bg-[#332720] text-[#5c4536] dark:text-[#d9c7b6] hover:bg-[#e3d4c0] cursor-pointer">
                     Ne, ponechat
                 </button>
-                <button type="button" onclick="appConfirmMoveToTrash()" class="px-5 py-2.5 rounded-xl text-sm font-semibold bg-rose-600 hover:bg-rose-700 text-white shadow-md cursor-pointer">
+                <button type="button" onclick="appConfirmMoveToTrash()" class="px-5 py-2.5 rounded-xl text-sm font-semibold bg-[#b8432e] hover:bg-[#9c3624] text-white shadow-md cursor-pointer">
                     Ano, přesunout do koše
                 </button>
             </div>
@@ -280,71 +309,71 @@
     </div>
 
     <!-- MODÁL: PŘIDAT NEBO UPRAVIT SLOŽKU ŽÁKA / SKUPINY -->
-    <div id="addStudentModal" class="fixed inset-0 z-50 hidden bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+    <div id="addStudentModal" class="fixed inset-0 z-50 hidden bg-[#120c08]/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-[#fffcf7] dark:bg-[#241c16] rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-[#e0d2be] dark:border-[#423227] space-y-4">
             <div class="flex items-center justify-between">
-                <h3 id="studentModalTitle" class="font-bold text-lg">Nová složka žáka / skupiny</h3>
-                <button type="button" onclick="appCloseAddStudent()" class="p-2 rounded-xl text-slate-400 hover:text-slate-600 cursor-pointer">✕</button>
+                <h3 id="studentModalTitle" class="font-serif font-bold text-lg">Nová složka žáka / skupiny</h3>
+                <button type="button" onclick="appCloseAddStudent()" class="p-2 rounded-xl text-[#9c8675] hover:text-[#4a3222] cursor-pointer">✕</button>
             </div>
             <div class="space-y-3">
                 <div>
-                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Jméno žáka nebo označení skupiny</label>
-                    <input id="newStudentNameInput" type="text" onkeydown="if(event.key==='Enter') appConfirmAddStudent()" placeholder="např. Josef, Mia, Úterý 15:00..." class="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    <label class="block text-xs font-semibold uppercase text-[#7d6552] dark:text-[#a89280] mb-1">Jméno žáka nebo označení skupiny</label>
+                    <input id="newStudentNameInput" type="text" onkeydown="if(event.key==='Enter') appConfirmAddStudent()" placeholder="např. Josef, Mia, Úterý 15:00..." class="w-full p-3 rounded-xl border border-[#d6c5b0] dark:border-[#45352a] bg-[#faf5ec] dark:bg-[#1a1410] text-sm focus:ring-2 focus:ring-[#b86b27] focus:outline-none">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Nástroj / Obor</label>
+                    <label class="block text-xs font-semibold uppercase text-[#7d6552] dark:text-[#a89280] mb-1">Nástroj / Obor</label>
                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        <button type="button" id="instBtn1" onclick="appSelectInstrument('klavír','🎹','instBtn1')" class="inst-btn p-2.5 rounded-xl border-2 border-indigo-500 bg-indigo-50 dark:bg-indigo-950/60 text-xs font-semibold flex flex-col items-center gap-1 cursor-pointer">
+                        <button type="button" id="instBtn1" onclick="appSelectInstrument('klavír','🎹','instBtn1')" class="inst-btn p-2.5 rounded-xl border-2 border-[#b86b27] bg-[#f7ede0] dark:bg-[#38271b] text-xs font-semibold flex flex-col items-center gap-1 cursor-pointer">
                             <span class="text-lg">🎹</span><span>Klavír</span>
                         </button>
-                        <button type="button" id="instBtn2" onclick="appSelectInstrument('kytara','🎸','instBtn2')" class="inst-btn p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold flex flex-col items-center gap-1 cursor-pointer">
+                        <button type="button" id="instBtn2" onclick="appSelectInstrument('kytara','🎸','instBtn2')" class="inst-btn p-2.5 rounded-xl border border-[#dfd1be] dark:border-[#403127] text-xs font-semibold flex flex-col items-center gap-1 cursor-pointer">
                             <span class="text-lg">🎸</span><span>Kytara</span>
                         </button>
-                        <button type="button" id="instBtn3" onclick="appSelectInstrument('el. kytara','⚡','instBtn3')" class="inst-btn p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold flex flex-col items-center gap-1 cursor-pointer">
+                        <button type="button" id="instBtn3" onclick="appSelectInstrument('el. kytara','⚡','instBtn3')" class="inst-btn p-2.5 rounded-xl border border-[#dfd1be] dark:border-[#403127] text-xs font-semibold flex flex-col items-center gap-1 cursor-pointer">
                             <span class="text-lg">⚡</span><span>El. kytara</span>
                         </button>
-                        <button type="button" id="instBtn4" onclick="appSelectInstrument('hudební dílna','🎼','instBtn4')" class="inst-btn p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold flex flex-col items-center gap-1 cursor-pointer">
+                        <button type="button" id="instBtn4" onclick="appSelectInstrument('hudební dílna','🎼','instBtn4')" class="inst-btn p-2.5 rounded-xl border border-[#dfd1be] dark:border-[#403127] text-xs font-semibold flex flex-col items-center gap-1 cursor-pointer">
                             <span class="text-lg">🎼</span><span>Hudební dílna</span>
                         </button>
-                        <button type="button" id="instBtn5" onclick="appSelectInstrument('komorní hra','🥁','instBtn5')" class="inst-btn p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold flex flex-col items-center gap-1 cursor-pointer">
+                        <button type="button" id="instBtn5" onclick="appSelectInstrument('komorní hra','🥁','instBtn5')" class="inst-btn p-2.5 rounded-xl border border-[#dfd1be] dark:border-[#403127] text-xs font-semibold flex flex-col items-center gap-1 cursor-pointer">
                             <span class="text-lg">🥁</span><span>Komorní hra</span>
                         </button>
                     </div>
                 </div>
             </div>
             <div class="flex justify-end gap-2 pt-2">
-                <button type="button" onclick="appCloseAddStudent()" class="px-4 py-2.5 rounded-xl text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 cursor-pointer">Zrušit</button>
-                <button id="studentModalSubmitBtn" type="button" onclick="appConfirmAddStudent()" class="px-5 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer shadow-md">Vytvořit složku</button>
+                <button type="button" onclick="appCloseAddStudent()" class="px-4 py-2.5 rounded-xl text-sm font-medium bg-[#efe5d7] dark:bg-[#332720] text-[#5c4536] dark:text-[#d9c7b6] cursor-pointer">Zrušit</button>
+                <button id="studentModalSubmitBtn" type="button" onclick="appConfirmAddStudent()" class="px-5 py-2.5 rounded-xl text-sm font-semibold bg-[#8c4a27] hover:bg-[#753c1e] dark:bg-[#a65d32] dark:hover:bg-[#8f4e28] text-white cursor-pointer shadow-md">Vytvořit složku</button>
             </div>
         </div>
     </div>
 
     <!-- MODÁL: NASTAVENÍ AI KLÍČE A PROPOJENÍ S GOOGLE TABULKOU -->
-    <div id="settingsModal" class="fixed inset-0 z-50 hidden bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+    <div id="settingsModal" class="fixed inset-0 z-50 hidden bg-[#120c08]/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-[#fffcf7] dark:bg-[#241c16] rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-[#e0d2be] dark:border-[#423227] space-y-4">
             <div class="flex items-center justify-between">
-                <h3 class="font-bold text-lg">⚙️ Nastavení AI & Google Tabulky</h3>
-                <button type="button" onclick="appCloseSettings()" class="p-2 rounded-xl text-slate-400 hover:text-slate-600 cursor-pointer">✕</button>
+                <h3 class="font-serif font-bold text-lg">⚙️ Nastavení AI & Google Tabulky</h3>
+                <button type="button" onclick="appCloseSettings()" class="p-2 rounded-xl text-[#9c8675] hover:text-[#4a3222] cursor-pointer">✕</button>
             </div>
             <div class="space-y-4">
                 <div>
-                    <label class="block text-xs font-bold uppercase text-indigo-500 mb-1">1. Gemini API Klíč (pro čtení fotek za 1,6 s)</label>
-                    <input id="apiKeyInput" type="text" placeholder="AIzaSy..." class="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm font-mono">
+                    <label class="block text-xs font-bold uppercase text-[#8c4a27] dark:text-[#e0a263] mb-1">1. Gemini API Klíč (pro čtení fotek za 1,6 s)</label>
+                    <input id="apiKeyInput" type="text" placeholder="AIzaSy..." class="w-full p-3 rounded-xl border border-[#d6c5b0] dark:border-[#45352a] bg-[#faf5ec] dark:bg-[#1a1410] text-sm font-mono">
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold uppercase text-emerald-500 mb-1">2. URL vaší Google Tabulky (končící na /exec)</label>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-1.5">
+                    <label class="block text-xs font-bold uppercase text-[#446b4b] dark:text-[#86b38d] mb-1">2. URL vaší Google Tabulky (končící na /exec)</label>
+                    <p class="text-xs text-[#7d6552] dark:text-[#a89280] mb-1.5">
                         Vložte sem odkaz z Apps Scriptu (Implementovat → Webová aplikace). Všechny zápisy i žáci se budou automaticky propisovat do tabulky.
                     </p>
-                    <input id="sheetUrlInput" type="url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-mono">
+                    <input id="sheetUrlInput" type="url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full p-3 rounded-xl border border-[#d6c5b0] dark:border-[#45352a] bg-[#faf5ec] dark:bg-[#1a1410] text-xs font-mono">
                 </div>
 
                 <div id="settingsTestStatus" class="hidden p-3.5 rounded-xl text-xs font-semibold leading-relaxed"></div>
             </div>
             <div class="flex justify-end gap-2 pt-2">
-                <button type="button" onclick="appCloseSettings()" class="px-4 py-2.5 rounded-xl text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 cursor-pointer">Zavřít</button>
-                <button type="button" onclick="appSaveSettings()" class="px-5 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm cursor-pointer">Uložit a synchronizovat</button>
+                <button type="button" onclick="appCloseSettings()" class="px-4 py-2.5 rounded-xl text-sm font-medium bg-[#efe5d7] dark:bg-[#332720] text-[#5c4536] dark:text-[#d9c7b6] cursor-pointer">Zavřít</button>
+                <button type="button" onclick="appSaveSettings()" class="px-5 py-2.5 rounded-xl text-sm font-semibold bg-[#8c4a27] hover:bg-[#753c1e] dark:bg-[#a65d32] dark:hover:bg-[#8f4e28] text-white shadow-sm cursor-pointer">Uložit a synchronizovat</button>
             </div>
         </div>
     </div>
@@ -379,7 +408,7 @@
         let entries = [];
         let activeStudentId = null;
         let editingStudentId = null;
-        let pendingDeleteStudentId = null; // ID složky čekající na potvrzení přesunu do koše
+        let pendingDeleteStudentId = null;
         let selectedInstrument = { name: 'klavír', icon: '🎹' };
         let currentPhotoAttached = false;
         let textBeforePolish = null;
@@ -398,7 +427,6 @@
             appPullFromGoogleSheet(false);
         })();
 
-        // Automatické vymazání složek, které jsou v koši déle než 30 dní
         function appPurgeExpiredTrash() {
             const now = Date.now();
             const expiredIds = students
@@ -439,9 +467,9 @@
             const label = document.getElementById('syncLabel');
             if (label) label.textContent = text;
             if (dot) {
-                if (status === 'ok') dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+                if (status === 'ok') dot.className = 'w-2 h-2 rounded-full bg-[#74b57c]';
                 else if (status === 'busy') dot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-pulse';
-                else dot.className = 'w-2 h-2 rounded-full bg-slate-400';
+                else dot.className = 'w-2 h-2 rounded-full bg-[#a89280]';
             }
         }
 
@@ -511,13 +539,13 @@
             sub.textContent = 'Model: ' + FIXED_MODEL;
 
             if (key && sheetUrl) {
-                btn.className = 'px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-xs font-bold text-slate-950 flex items-center gap-1.5 transition cursor-pointer shadow-sm';
+                btn.className = 'px-3 py-1.5 rounded-xl bg-[#4f7a55] hover:bg-[#416646] text-xs font-bold text-[#f7faf7] flex items-center gap-1.5 transition cursor-pointer shadow-sm';
                 txt.textContent = 'AI + Tabulka ✓';
             } else if (key) {
-                btn.className = 'px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-xs font-bold text-slate-950 flex items-center gap-1.5 transition cursor-pointer shadow-sm';
+                btn.className = 'px-3 py-1.5 rounded-xl bg-[#4f7a55] hover:bg-[#416646] text-xs font-bold text-[#f7faf7] flex items-center gap-1.5 transition cursor-pointer shadow-sm';
                 txt.textContent = 'AI aktivní ✓';
             } else {
-                btn.className = 'px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-500 text-xs font-bold text-slate-950 flex items-center gap-1.5 transition cursor-pointer shadow-sm';
+                btn.className = 'px-3 py-1.5 rounded-xl bg-[#c98a4b] hover:bg-[#b8793b] text-xs font-bold text-[#1f130c] flex items-center gap-1.5 transition cursor-pointer shadow-sm';
                 txt.textContent = 'Nastavení';
             }
         }
@@ -578,9 +606,9 @@
                 const b = document.getElementById(id);
                 if (!b) return;
                 if (id === btnId) {
-                    b.className = 'inst-btn p-2.5 rounded-xl border-2 border-indigo-500 bg-indigo-50 dark:bg-indigo-950/60 text-xs font-semibold flex flex-col items-center gap-1 cursor-pointer';
+                    b.className = 'inst-btn p-2.5 rounded-xl border-2 border-[#b86b27] bg-[#f7ede0] dark:bg-[#38271b] text-xs font-semibold flex flex-col items-center gap-1 cursor-pointer';
                 } else {
-                    b.className = 'inst-btn p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold flex flex-col items-center gap-1 cursor-pointer';
+                    b.className = 'inst-btn p-2.5 rounded-xl border border-[#dfd1be] dark:border-[#403127] text-xs font-semibold flex flex-col items-center gap-1 cursor-pointer';
                 }
             });
         }
@@ -626,7 +654,6 @@
             appRenderHome();
         }
 
-        // --- POTVRZENÍ A PŘESUN SLOŽKY DO KOŠE (30 DNÍ) ---
         function appAskDeleteStudent(studentId, event) {
             if (event) event.stopPropagation();
             const st = students.find(s => s.id === studentId);
@@ -701,7 +728,7 @@
             setStore(SHEET_URL_STORAGE, sheetUrl);
             appUpdateBadges();
 
-            statusEl.className = 'p-3.5 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-800';
+            statusEl.className = 'p-3.5 rounded-xl text-xs font-semibold bg-[#eef3ec] text-[#2d4a32]';
             statusEl.textContent = '✅ Nastavení uloženo!';
 
             if (sheetUrl) {
@@ -1069,8 +1096,8 @@
             const pBtn = document.getElementById('tabAllPendingBtn');
             const tBtn = document.getElementById('tabTrashBtn');
 
-            const activeCls = 'px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold bg-white dark:bg-slate-800 text-indigo-700 dark:text-indigo-400 shadow-sm transition flex items-center gap-1.5 cursor-pointer';
-            const inactiveCls = 'px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 transition flex items-center gap-1.5 cursor-pointer';
+            const activeCls = 'px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold bg-[#fffcf7] dark:bg-[#352820] text-[#7c3f1c] dark:text-[#e6b17a] shadow-sm transition flex items-center gap-1.5 cursor-pointer';
+            const inactiveCls = 'px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold text-[#6e5645] dark:text-[#a89280] hover:text-[#2e2017] dark:hover:text-[#efe6da] transition flex items-center gap-1.5 cursor-pointer';
 
             fSec.classList.add('hidden');
             pSec.classList.add('hidden');
@@ -1115,7 +1142,6 @@
             appRenderHome();
         }
 
-        // --- VYKRESLENÍ AKTIVNÍCH SLOŽEK SESKUPENÝCH PODLE OBORŮ ---
         function appRenderHome() {
             appPurgeExpiredTrash();
 
@@ -1130,7 +1156,7 @@
             container.innerHTML = '';
 
             if (activeStudents.length === 0) {
-                container.innerHTML = '<p class="text-sm text-slate-500 text-center py-8">Zatím nemáte žádné aktivní složky žáků.</p>';
+                container.innerHTML = '<p class="text-sm text-[#8f7866] text-center py-8">Zatím nemáte žádné aktivní složky žáků.</p>';
                 appRenderAllPending();
                 appRenderTrash();
                 return;
@@ -1155,15 +1181,15 @@
             groupsToRender.forEach((grp, idx) => {
                 const section = document.createElement('div');
                 section.className = idx > 0
-                    ? 'pt-6 border-t-2 border-slate-200 dark:border-slate-800 space-y-3'
+                    ? 'pt-6 border-t border-[#dfd1be] dark:border-[#362920] space-y-3'
                     : 'space-y-3';
 
                 section.innerHTML = `
                     <div class="flex items-center justify-between px-1">
                         <div class="flex items-center gap-2">
                             <span class="text-lg">${grp.icon}</span>
-                            <h2 class="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">${escapeHtml(grp.title)}</h2>
-                            <span class="px-2 py-0.5 text-[11px] font-semibold rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400">${grp.items.length}</span>
+                            <h2 class="font-serif text-sm sm:text-base font-bold tracking-wide text-[#5c3d28] dark:text-[#d9b896]">${escapeHtml(grp.title)}</h2>
+                            <span class="px-2 py-0.5 text-[11px] font-semibold rounded-full bg-[#e8dccb] dark:bg-[#2e231c] text-[#6e5645] dark:text-[#b09884]">${grp.items.length}</span>
                         </div>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 group-grid"></div>
@@ -1176,27 +1202,27 @@
                     const lastEntry = stEntries[0];
 
                     const card = document.createElement('div');
-                    card.className = 'cursor-pointer bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 hover:border-indigo-500 transition flex items-center justify-between gap-2';
+                    card.className = 'cursor-pointer bg-[#fffcf7] dark:bg-[#231b16] p-4 rounded-2xl diary-shadow border border-[#e3d6c4] dark:border-[#3a2c23] hover:border-[#b86b27] dark:hover:border-[#c98a4b] transition flex items-center justify-between gap-2';
                     card.onclick = () => appOpenStudent(st.id);
 
                     card.innerHTML = `
                         <div class="flex items-center gap-3 min-w-0">
-                            <div class="w-11 h-11 rounded-2xl bg-indigo-50 dark:bg-slate-800 flex items-center justify-center text-2xl shrink-0">${st.icon || '🎵'}</div>
+                            <div class="w-11 h-11 rounded-2xl bg-[#f4eadb] dark:bg-[#32261e] border border-[#e3d4c0] dark:border-[#47362b] flex items-center justify-center text-2xl shrink-0">${st.icon || '🎵'}</div>
                             <div class="min-w-0">
-                                <h3 class="font-bold text-base truncate">${escapeHtml(st.name)}</h3>
-                                <p class="text-xs text-slate-500 dark:text-slate-400 truncate">
+                                <h3 class="font-bold text-base truncate text-[#2e2017] dark:text-[#f5ebd9]">${escapeHtml(st.name)}</h3>
+                                <p class="text-xs text-[#856b57] dark:text-[#9e8876] truncate">
                                     ${lastEntry ? 'Poslední: ' + formatCzechDate(lastEntry.date) : 'Zatím žádný zápis'}
                                 </p>
                             </div>
                         </div>
                         <div class="flex items-center gap-1 shrink-0">
-                            <span class="px-2.5 py-1 rounded-full text-xs font-bold ${pending > 0 ? 'bg-amber-100 text-amber-800' : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'}">
+                            <span class="px-2.5 py-1 rounded-full text-xs font-bold ${pending > 0 ? 'bg-[#f5e1c3] text-[#8a4d12] dark:bg-[#473018] dark:text-[#f0be81]' : 'bg-[#e7f0e6] text-[#35593b] dark:bg-[#223325] dark:text-[#98c79e]'}">
                                 ${pending > 0 ? pending + ' ke zkop.' : 'Hotovo ✓'}
                             </span>
-                            <button type="button" class="edit-folder-btn p-2 rounded-xl text-slate-400 hover:text-indigo-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer" title="Upravit jméno nebo obor složky">
+                            <button type="button" class="edit-folder-btn p-2 rounded-xl text-[#9c8675] hover:text-[#8c4a27] dark:hover:text-[#e0a263] hover:bg-[#f2e8da] dark:hover:bg-[#332720] transition cursor-pointer" title="Upravit jméno nebo obor složky">
                                 ✏️
                             </button>
-                            <button type="button" class="trash-folder-btn p-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer" title="Přesunout složku do koše">
+                            <button type="button" class="trash-folder-btn p-2 rounded-xl text-[#9c8675] hover:text-[#b8432e] hover:bg-[#f7e3de] dark:hover:bg-[#3d211b] transition cursor-pointer" title="Přesunout složku do koše">
                                 🗑️
                             </button>
                         </div>
@@ -1218,14 +1244,13 @@
             const c = document.getElementById('allPendingList');
             const activeStudentIds = new Set(students.filter(s => !s.deletedAt).map(s => s.id));
             const pending = sortEntriesByDate(entries.filter(e => !e.copied && activeStudentIds.has(e.studentId)));
-            c.innerHTML = pending.length === 0 ? '<p class="text-sm text-slate-500 text-center py-8">Vše zkopírováno!</p>' : '';
+            c.innerHTML = pending.length === 0 ? '<p class="text-sm text-[#8f7866] text-center py-8">Vše zkopírováno!</p>' : '';
             pending.forEach(entry => {
                 const st = students.find(s => s.id === entry.studentId);
                 c.appendChild(buildEntryCard(entry, st ? `${st.icon} ${st.name}` : 'Žák'));
             });
         }
 
-        // --- VYKRESLENÍ KOŠE S ODPOČTEM 30 DNÍ ---
         function appRenderTrash() {
             const trashContainer = document.getElementById('trashList');
             if (!trashContainer) return;
@@ -1235,8 +1260,8 @@
 
             if (trashed.length === 0) {
                 trashContainer.innerHTML = `
-                    <div class="col-span-full text-center py-10 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-300 dark:border-slate-800">
-                        <p class="text-sm text-slate-500">Koš je prázdný.</p>
+                    <div class="col-span-full text-center py-10 bg-[#fffcf7] dark:bg-[#231b16] rounded-2xl border border-dashed border-[#d8cab8] dark:border-[#3f3127]">
+                        <p class="text-sm text-[#8f7866]">Koš je prázdný.</p>
                     </div>
                 `;
                 return;
@@ -1249,26 +1274,26 @@
                 const stEntriesCount = entries.filter(e => e.studentId === st.id).length;
 
                 const card = document.createElement('div');
-                card.className = 'bg-white dark:bg-slate-900 p-4 rounded-2xl border border-rose-200 dark:border-rose-900/50 shadow-sm flex flex-col justify-between gap-3';
+                card.className = 'bg-[#fffcf7] dark:bg-[#231b16] p-4 rounded-2xl border border-[#e3bfb4] dark:border-[#522f26] diary-shadow flex flex-col justify-between gap-3';
                 card.innerHTML = `
                     <div class="flex items-start justify-between gap-2">
                         <div class="flex items-center gap-3 min-w-0">
-                            <div class="w-11 h-11 rounded-2xl bg-rose-50 dark:bg-rose-950/50 flex items-center justify-center text-2xl shrink-0 opacity-75">
+                            <div class="w-11 h-11 rounded-2xl bg-[#f7e3de] dark:bg-[#3d211b] flex items-center justify-center text-2xl shrink-0 opacity-75">
                                 ${st.icon || '🎵'}
                             </div>
                             <div class="min-w-0">
-                                <h3 class="font-bold text-base truncate line-through text-slate-600 dark:text-slate-300">${escapeHtml(st.name)}</h3>
-                                <p class="text-xs text-rose-600 dark:text-rose-400 font-semibold">
+                                <h3 class="font-bold text-base truncate line-through text-[#7d6552] dark:text-[#b09884]">${escapeHtml(st.name)}</h3>
+                                <p class="text-xs text-[#b8432e] dark:text-[#e88a78] font-semibold">
                                     ⏳ Smaže se za ${remainingDays} ${remainingDays === 1 ? 'den' : (remainingDays < 5 ? 'dny' : 'dní')} (${stEntriesCount} zápisů)
                                 </p>
                             </div>
                         </div>
                     </div>
-                    <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                        <button type="button" class="restore-btn px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition cursor-pointer">
+                    <div class="flex items-center justify-end gap-2 pt-2 border-t border-[#ede3d4] dark:border-[#332720]">
+                        <button type="button" class="restore-btn px-3.5 py-2 rounded-xl text-xs font-bold bg-[#446b4b] hover:bg-[#36573c] text-white transition cursor-pointer">
                             ↩️ Obnovit složku
                         </button>
-                        <button type="button" class="perm-del-btn px-3 py-2 rounded-xl text-xs font-semibold bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 hover:bg-rose-200 transition cursor-pointer">
+                        <button type="button" class="perm-del-btn px-3 py-2 rounded-xl text-xs font-semibold bg-[#f7e3de] dark:bg-[#3d211b] text-[#9c3624] dark:text-[#e88a78] hover:bg-[#f0d0c7] transition cursor-pointer">
                             Smazat hned
                         </button>
                     </div>
@@ -1289,7 +1314,7 @@
             document.getElementById('studentCopiedCount').textContent = copied.length;
 
             const pList = document.getElementById('studentPendingList');
-            pList.innerHTML = pending.length === 0 ? '<p class="text-sm text-slate-500 text-center py-6">Žádné nezkopírované zápisy.</p>' : '';
+            pList.innerHTML = pending.length === 0 ? '<p class="text-sm text-[#8f7866] text-center py-6">Žádné nezkopírované zápisy.</p>' : '';
             pending.forEach(e => pList.appendChild(buildEntryCard(e, null)));
 
             const cList = document.getElementById('studentCopiedList');
@@ -1299,24 +1324,24 @@
 
         function buildEntryCard(entry, studentLabel) {
             const div = document.createElement('div');
-            div.className = 'p-4 rounded-2xl border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm space-y-2.5';
+            div.className = 'p-4 rounded-2xl border bg-[#fffcf7] dark:bg-[#231b16] border-[#e2d5c3] dark:border-[#3a2c23] diary-shadow space-y-2.5';
             div.innerHTML = `
                 <div class="flex flex-wrap justify-between items-center gap-2">
                     <div class="flex flex-wrap items-center gap-2">
-                        <label class="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 cursor-pointer hover:ring-2 hover:ring-indigo-500 transition" title="Kliknutím změníte datum hodiny">
+                        <label class="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-lg bg-[#f2e8da] dark:bg-[#32261e] text-[#5c3d28] dark:text-[#e6c9ab] cursor-pointer hover:ring-2 hover:ring-[#b86b27] transition" title="Kliknutím změníte datum hodiny">
                             <span>📅</span>
                             <input type="date" value="${escapeHtml(entry.date)}" class="entry-date-input bg-transparent border-none focus:outline-none text-xs font-bold cursor-pointer">
                         </label>
-                        ${studentLabel ? `<span class="text-xs font-bold px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300">${escapeHtml(studentLabel)}</span>` : ''}
+                        ${studentLabel ? `<span class="text-xs font-bold px-2.5 py-1 rounded-lg bg-[#f5e6d3] dark:bg-[#3a291d] text-[#8c4a27] dark:text-[#e6b17a]">${escapeHtml(studentLabel)}</span>` : ''}
                     </div>
-                    <button type="button" class="del-btn text-xs text-slate-400 hover:text-rose-500 p-1 cursor-pointer" title="Smazat zápis">✕</button>
+                    <button type="button" class="del-btn text-xs text-[#9c8675] hover:text-[#b8432e] p-1 cursor-pointer" title="Smazat zápis">✕</button>
                 </div>
-                <textarea rows="3" class="edit-ta w-full p-3 text-sm sm:text-base rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">${escapeHtml(entry.polishedText)}</textarea>
+                <textarea rows="3" class="edit-ta w-full p-3 text-sm sm:text-base rounded-xl border border-[#e3d6c4] dark:border-[#3d2f25] bg-[#faf5ec] dark:bg-[#1a1410] focus:outline-none focus:ring-2 focus:ring-[#b86b27]">${escapeHtml(entry.polishedText)}</textarea>
                 <div class="flex justify-between items-center">
-                    <button type="button" class="status-btn text-xs font-medium ${entry.copied ? 'text-emerald-500' : 'text-amber-500'} cursor-pointer">
+                    <button type="button" class="status-btn text-xs font-medium ${entry.copied ? 'text-[#446b4b] dark:text-[#86b38d]' : 'text-[#b86b27] dark:text-[#e0a263]'} cursor-pointer">
                         ${entry.copied ? '✓ Zapsáno v iZUŠ (Vrátit)' : 'Čeká na přepis'}
                     </button>
-                    <button type="button" class="copy-btn px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer">
+                    <button type="button" class="copy-btn px-4 py-2 rounded-xl text-xs font-bold bg-[#8c4a27] hover:bg-[#753c1e] dark:bg-[#a65d32] dark:hover:bg-[#8f4e28] text-[#fdf8f0] cursor-pointer shadow-sm">
                         Kopírovat do iZUŠ
                     </button>
                 </div>
@@ -1382,8 +1407,8 @@
         function appToast(msg, type) {
             const c = document.getElementById('toastContainer');
             const t = document.createElement('div');
-            const bg = type === 'error' ? 'bg-rose-600' : (type === 'success' ? 'bg-emerald-600' : 'bg-slate-800');
-            t.className = `${bg} text-white px-4 py-3 rounded-xl shadow-lg text-xs sm:text-sm font-medium`;
+            const bg = type === 'error' ? 'bg-[#a63a28]' : (type === 'success' ? 'bg-[#446b4b]' : 'bg-[#4a2e1f]');
+            t.className = `${bg} text-[#fdf8f0] px-4 py-3 rounded-xl shadow-lg text-xs sm:text-sm font-medium border border-[#d4a373]/25`;
             t.textContent = msg;
             c.appendChild(t);
             setTimeout(() => t.remove(), 3500);
